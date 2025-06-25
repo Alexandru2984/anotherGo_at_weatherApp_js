@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ro">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vremea</title>
+
+    <!-- Font Awesome for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Fisierele CSS și JavaScript ale aplicației noastre, cu căile corecte -->
+    <script>
+    // Executat înainte ca pagina să fie randată complet
+    (function () {
+      const styles = [
+        'styles/styles.css',
+        'styles/styles_v1.css',
+        'styles/styles_v2.css',
+        'styles/styles_v3.css',
+        'styles/styles_v4.css'
+      ];
+      const randomStyle = styles[Math.floor(Math.random() * styles.length)];
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = randomStyle;
+      document.head.appendChild(link);
+    })();
+  </script>
+    <script type="module" src="scripts/app.js" defer></script>
+  </head>
+  <body>
+    <div class="container">
+      <main>
+        <!-- Search Section -->
+        <section class="search-section">
+          <div class="top-bar">
+            <button
+              id="get-location"
+              class="btn btn-round"
+              title="Folosiți locația curentă"
+              data-i18n-title="useCurrentLocation"
+            >
+              <i class="fas fa-location-arrow"></i>
+              <span data-i18n="currentLocation">Locația Curentă</span>
+            </button>
+
+            <div class="unit-toggle">
+              <span data-i18n="celsiusSymbol">°C</span>
+              <label class="switch">
+                <input type="checkbox" id="temp-toggle" />
+                <span class="slider round"></span>
+              </label>
+              <span data-i18n="fahrenheitSymbol" id="display-unit">°F</span>
+            </div>
+
+            <!-- Selector de limbă adăugat aici -->
+            <div class="lang-selector">
+                <select id="lang-select" aria-label="Select language">
+                    <option value="ro">Română</option>
+                    <option value="en">English</option>
+                    <!-- Poți adăuga mai multe opțiuni de limbă aici -->
+                </select>
+            </div>
+          </div>
+
+          <form action="" id="search-form" class="search-container">
+            <input
+              type="text"
+              name="city"
+              class="input"
+              placeholder="Introduceți numele orașului"
+              data-i18n-placeholder="enterCityName"
+            />
+            <button class="btn">
+              <i class="fas fa-search"></i>
+            </button>
+          </form>
+        </section>
+
+        <!-- Loading Spinner -->
+        <div id="loading-spinner" class="spinner hidden">
+          <div class="bounce1"></div>
+          <div class="bounce2"></div>
+          <div class="bounce3"></div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error-message" class="error-message hidden"></div>
+
+        <!-- Weather Information -->
+        <section id="weather-info" class="card weather-info hidden">
+          <div class="city-info">
+            <h2 id="city-name"></h2>
+            <p id="date-time"></p>
+          </div>
+
+          <div class="weather-main">
+            <div class="temperature-container">
+              <div class="temperature-main">
+                <span id="temperature"></span>
+                <span class="degree">&deg;</span>
+              </div>
+              <div class="feels-like">
+                <span data-i18n="feelsLike">Se simte ca: </span>
+                <span id="feels-like"></span>
+                <span class="degree">&deg;</span>
+              </div>
+            </div>
+
+            <div class="weather-icon-container">
+              <img id="weather-icon" src="#" alt="Iconiță meteo" data-i18n-alt="weatherIconAlt"/>
+              <p id="description"></p>
+            </div>
+          </div>
+
+          <div class="weather-details data-panel">
+            <div class="data-row">
+              <i class="fas fa-tint data-icon"></i>
+              <span class="data-label" data-i18n="humidity">Umiditate</span>
+              <div class="data-value">
+                <span id="humidity"></span>
+                <span>%</span>
+              </div>
+            </div>
+            <div class="data-row">
+              <i class="fas fa-wind data-icon"></i>
+              <span class="data-label" data-i18n="wind">Vânt</span>
+              <div class="data-value">
+                <span id="wind-speed"></span>
+                <span data-i18n="windUnit"> m/s</span>
+              </div>
+            </div>
+            <div class="data-row">
+              <i class="fas fa-compress-alt data-icon"></i>
+              <span class="data-label" data-i18n="pressure">Presiune</span>
+              <div class="data-value">
+                <span id="pressure"></span>
+                <span data-i18n="pressureUnit"> hPa</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="sun-times data-panel">
+            <div class="data-row">
+              <i class="fas fa-sun data-icon"></i>
+              <span class="data-label" data-i18n="sunrise">Răsărit</span>
+              <span id="sunrise" class="data-value"></span>
+            </div>
+            <div class="data-row">
+              <i class="fas fa-moon data-icon"></i>
+              <span class="data-label" data-i18n="sunset">Apus</span>
+              <span id="sunset" class="data-value"></span>
+            </div>
+          </div>
+
+          <!-- Temperature Range Visualization -->
+          <div class="temperature-visualization">
+            <div id="temp-range" class="temp-range">
+              <div id="temp-min" class="temp-min"></div>
+              <div id="temp-indicator" class="temp-indicator">
+                <span id="temp-current-label" class="temp-current-label"></span>
+              </div>
+              <div id="temp-max" class="temp-max"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Recent Searches -->
+        <section id="recent-searches" class="card recent-searches hidden">
+          <h3 data-i18n="recentSearchesTitle">Căutări Recente</h3>
+          <ul id="recent-list" class="tag-list"></ul>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <p>
+          <span data-i18n="dataProvidedBy">Date furnizate de</span>
+          <a href="https://openweathermap.org/" target="_blank"
+            >OpenWeatherMap</a
+          >
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>

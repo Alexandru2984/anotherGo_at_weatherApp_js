@@ -1,0 +1,501 @@
+:root {
+    --bg-color: #ffebee; /* Roșu pastel deschis */
+    --card-bg: #ffffff;
+    --text-color: #3f51b5; /* Albastru indigo */
+    --primary-color: #ff4081; /* Roz vibrant */
+    --secondary-color: #ffab00; /* Portocaliu accent */
+    --border-color: #fce4ec; /* Roșu pastel mai închis */
+    --shadow-color: rgba(255, 64, 129, 0.2); /* Umbră cu tentă de accent */
+    --light-gradient: linear-gradient(135deg, #f8bbd0, #ffccbc);
+}
+
+body {
+    font-family: 'Comic Sans MS', cursive, sans-serif; /* O notă mai jucăușă */
+    margin: 0;
+    padding: 30px;
+    background: var(--light-gradient);
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.container {
+    max-width: 480px;
+    width: 100%;
+    background-color: var(--card-bg);
+    border-radius: 20px;
+    box-shadow: 0 15px 40px var(--shadow-color);
+    padding: 35px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.card {
+    background-color: var(--card-bg);
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+}
+
+/* --- Search Section --- */
+.search-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.btn {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 14px 22px;
+    border: none;
+    border-radius: 30px; /* Foarte rotunjit */
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    box-shadow: 0 5px 15px rgba(255, 64, 129, 0.3);
+}
+
+.btn:hover {
+    background-color: #e91e63;
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(255, 64, 129, 0.4);
+}
+
+.btn-round {
+    padding: 12px 20px;
+}
+
+.unit-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--secondary-color);
+}
+
+/* Switch Toggle */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 55px;
+    height: 30px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--border-color);
+    transition: .4s;
+    border-radius: 30px;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+input:checked + .slider {
+    background-color: var(--secondary-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(25px);
+}
+
+.search-container {
+    display: flex;
+    gap: 15px;
+}
+
+.search-container .input {
+    flex-grow: 1;
+    padding: 16px 25px;
+    border: 1px solid var(--border-color);
+    border-radius: 30px;
+    background-color: #fdfdfd;
+    color: var(--text-color);
+    font-size: 1.1em;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.search-container .input::placeholder {
+    color: rgba(63, 81, 181, 0.6);
+}
+
+.search-container .input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(255, 64, 129, 0.2);
+}
+
+.search-container .btn {
+    padding: 16px 25px;
+    border-radius: 30px;
+}
+
+/* --- Loading Spinner --- */
+.spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 120px;
+}
+
+.spinner.hidden { display: none; }
+
+.spinner > div {
+    width: 22px;
+    height: 22px;
+    background-color: var(--secondary-color);
+    border-radius: 100%;
+    display: inline-block;
+    animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+    box-shadow: 0 0 10px rgba(255, 171, 0, 0.5);
+}
+
+/* --- Error Message --- */
+.error-message {
+    background-color: #ffcdd2;
+    color: #d32f2f;
+    padding: 15px 20px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: bold;
+    border: 1px solid #ef9a9a;
+    box-shadow: 0 3px 10px rgba(211, 47, 47, 0.2);
+}
+
+.error-message.hidden { display: none; }
+
+/* --- Weather Information --- */
+.weather-info {
+    text-align: center;
+}
+
+.city-info h2 {
+    font-size: 3em;
+    margin-bottom: 8px;
+    color: var(--primary-color);
+    font-weight: 900;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.city-info p {
+    font-size: 1.1em;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.weather-main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    margin: 30px 0;
+    flex-wrap: wrap;
+}
+
+.temperature-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.temperature-main {
+    font-size: 6em;
+    font-weight: 700;
+    display: flex;
+    align-items: flex-start;
+    line-height: 1;
+    color: var(--secondary-color);
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.temperature-main .degree {
+    font-size: 0.5em;
+    margin-left: 8px;
+    align-self: flex-start;
+    color: var(--text-color);
+}
+
+.feels-like {
+    font-size: 1.3em;
+    color: var(--text-color);
+    margin-top: 10px;
+    font-weight: 500;
+}
+
+.weather-icon-container img {
+    width: 140px;
+    height: 140px;
+    filter: drop-shadow(5px 5px 10px rgba(255, 171, 0, 0.4));
+}
+
+.weather-icon-container p {
+    font-size: 1.3em;
+    text-transform: capitalize;
+    margin-top: 12px;
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.data-panel {
+    background-color: var(--border-color);
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 30px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.05);
+}
+
+.data-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px dashed rgba(63, 81, 181, 0.1);
+}
+
+.data-row:last-child {
+    border-bottom: none;
+}
+
+.data-icon {
+    color: var(--secondary-color);
+    width: 35px;
+    text-align: center;
+    font-size: 1.5em;
+    animation: bounce 2s infinite ease-in-out;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+.data-label {
+    flex-grow: 1;
+    margin-left: 15px;
+    font-size: 1.1em;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.data-value {
+    font-weight: bold;
+    color: var(--primary-color);
+    font-size: 1.1em;
+}
+
+/* --- Temperature Range Visualization --- */
+.temperature-visualization {
+    margin-top: 35px;
+    padding: 20px;
+    background-color: var(--border-color);
+    border-radius: 15px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.05);
+}
+
+.temp-range {
+    display: flex;
+    align-items: center;
+    height: 15px;
+    background: linear-gradient(to right, #64b5f6, #ffab00, #ff4081); /* Gradient color range */
+    border-radius: 8px;
+    position: relative;
+    margin: 0 20px;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.temp-min, .temp-max {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background-color: var(--text-color);
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.temp-min { left: 0; transform: translateX(-50%); }
+.temp-max { right: 0; transform: translateX(50%); }
+
+.temp-indicator {
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    background-color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 15px rgba(255, 64, 129, 0.5);
+    border: 3px solid var(--primary-color);
+}
+
+.temp-current-label {
+    font-size: 0.9em;
+    color: var(--text-color);
+    font-weight: bold;
+}
+
+/* --- Recent Searches --- */
+.recent-searches h3 {
+    font-size: 1.8em;
+    color: var(--text-color);
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 15px;
+    text-align: center;
+    font-weight: 800;
+}
+
+.tag-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; /* Centrare tag-uri */
+    gap: 12px;
+}
+
+.tag-list li {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 10px 18px;
+    border-radius: 25px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    box-shadow: 0 3px 10px rgba(255, 64, 129, 0.2);
+}
+
+.tag-list li:hover {
+    background-color: #e91e63;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 64, 129, 0.3);
+}
+
+/* --- Footer --- */
+.app-footer {
+    text-align: center;
+    margin-top: 35px;
+    font-size: 1em;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.app-footer a {
+    color: var(--secondary-color);
+    text-decoration: none;
+    transition: color 0.3s ease, text-decoration 0.3s ease;
+    font-weight: bold;
+}
+
+.app-footer a:hover {
+    color: #ffa000;
+    text-decoration: underline;
+}
+
+/* Utility classes */
+.hidden { display: none !important; }
+
+.lang-selector {
+    position: relative;
+    display: inline-block;
+    min-width: 130px; /* Puțin mai lat pentru un aspect jucăuș */
+  }
+  
+  .lang-selector select {
+    /* Ascunde săgeata implicită a browserului */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  
+    background-color: var(--card-bg); /* Fundal alb, ca al cardurilor */
+    color: var(--text-color); /* Culoarea textului (indigo) */
+    padding: 12px 40px 12px 20px; /* Padding generos pentru a se potrivi cu butoanele */
+    border: 2px solid var(--border-color); /* Chenar subtil pastel */
+    border-radius: 30px; /* Rotunjire extremă, ca butoanele */
+    font-family: 'Comic Sans MS', cursive, sans-serif; /* Moștenește fontul jucăuș */
+    font-size: 1.1em; /* Text puțin mai mare */
+    font-weight: bold; /* Text mai îndrăzneț */
+    cursor: pointer;
+    outline: none;
+    width: 100%;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Umbră pronunțată, dar subtilă */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+  }
+  
+  .lang-selector select:hover {
+    border-color: var(--primary-color); /* Roz vibrant la hover */
+    background-color: #fffafc; /* Fundal alb-rozaliu la hover */
+    box-shadow: 0 8px 20px rgba(255, 64, 129, 0.25); /* Umbră cu tentă de roz */
+  }
+  
+  .lang-selector select:focus {
+    border-color: var(--secondary-color); /* Portocaliu accent la focus */
+    box-shadow: 0 0 0 4px rgba(255, 171, 0, 0.3); /* Inel de focus portocaliu */
+  }
+  
+  /* Săgeata personalizată Font Awesome */
+  .lang-selector::after {
+    content: '\f078'; /* Codul Font Awesome pentru săgeata jos */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    right: 18px; /* Poziționează săgeata */
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--secondary-color); /* Săgeată portocalie */
+    pointer-events: none; /* Permite click-ul să treacă prin săgeată */
+    transition: color 0.3s ease;
+  }
+  
+  .lang-selector select:hover + .lang-selector::after,
+  .lang-selector select:focus + .lang-selector::after {
+    color: var(--primary-color); /* Săgeată roz la hover/focus */
+  }

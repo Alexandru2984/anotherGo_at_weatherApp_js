@@ -1,0 +1,565 @@
+/* styles.css (Dark Mode) */
+:root {
+    /* Dark Mode Colors */
+    --primary-color: #64b5f6; /* Soft Blue */
+    --secondary-color: #90caf9; /* Lighter Blue */
+    --background-color: #212121; /* Dark Gray */
+    --card-background: #363636; /* Slightly lighter dark gray for cards */
+    --text-color: #e0e0e0; /* Light Gray for main text */
+    --light-text-color: #bdbdbd; /* Slightly darker light gray */
+    --border-radius: 12px;
+    --shadow: 0 4px 15px rgba(0, 0, 0, 0.4); /* Deeper shadow for dark mode */
+    --input-border: #555;
+    --error-color: #ef5350; /* Soft Red */
+    --success-color: #66bb6a; /* Soft Green */
+  }
+  
+  body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: var(--background-color);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align to top for better scrolling on smaller screens */
+    min-height: 100vh;
+    color: var(--text-color);
+    box-sizing: border-box;
+  }
+  
+  .container {
+    width: 100%;
+    max-width: 600px;
+    background-color: var(--background-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  main {
+    padding: 0; /* Remove padding here, cards will have it */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .card {
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 25px 30px; /* Consistent padding */
+  }
+  
+  /* Search Section */
+  .search-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 25px 30px;
+  }
+  
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+    gap: 15px; /* Spacing between items */
+  }
+  
+  .btn {
+    background-color: var(--primary-color);
+    color: #212121; /* Dark text on light button */
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease, transform 0.2s ease, color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+  }
+  
+  .btn:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-2px);
+  }
+  
+  .btn:active {
+    transform: translateY(0);
+  }
+  
+  .btn-round {
+    padding: 10px 15px; /* Adjust padding for rounder look */
+    border-radius: 25px; /* More rounded */
+  }
+  
+  .search-container {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .search-container .input {
+    flex-grow: 1;
+    padding: 12px 18px;
+    border: 1px solid var(--input-border);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    outline: none;
+    background-color: var(--background-color); /* Dark input background */
+    color: var(--text-color); /* Light text color */
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+  }
+  
+  .search-container .input::placeholder {
+    color: var(--light-text-color); /* Placeholder color */
+    opacity: 0.7;
+  }
+  
+  .search-container .input:focus {
+    border-color: var(--primary-color);
+    background-color: #424242; /* Slightly lighter on focus */
+  }
+  
+  /* Unit Toggle Switch */
+  .unit-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+    font-size: 1.1rem;
+  }
+  
+  /* Stil pentru eticheta unității active */
+  .unit-toggle span.active-unit-label {
+    font-weight: bold;
+    color: var(--primary-color);
+    transition: color 0.3s ease, font-weight 0.3s ease;
+  }
+  
+  
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+  }
+  
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--input-border); /* Darker slider track */
+    transition: 0.4s;
+    border-radius: 28px;
+  }
+  
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: var(--text-color); /* Slider knob color */
+    transition: 0.4s;
+    border-radius: 50%;
+  }
+  
+  input:checked + .slider {
+    background-color: var(--primary-color);
+  }
+  
+  input:checked + .slider:before {
+    transform: translateX(22px);
+  }
+  
+  /* Loading Spinner */
+  .spinner {
+    margin: 50px auto;
+    width: 70px;
+    text-align: center;
+  }
+  
+  .spinner > div {
+    width: 18px;
+    height: 18px;
+    background-color: var(--primary-color);
+    border-radius: 100%;
+    display: inline-block;
+    animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+  }
+  
+  .spinner .bounce1 {
+    animation-delay: -0.32s;
+  }
+  
+  .spinner .bounce2 {
+    animation-delay: -0.16s;
+  }
+  
+  .spinner .bounce3 {
+    animation-delay: -0s;
+  }
+  
+  @keyframes sk-bouncedelay {
+    0%,
+    80%,
+    100% {
+      transform: scale(0);
+    }
+    40% {
+      transform: scale(1);
+    }
+  }
+  
+  /* Error Message */
+  .error-message {
+    background-color: var(--error-color);
+    color: white;
+    padding: 15px;
+    border-radius: var(--border-radius);
+    text-align: center;
+    margin-top: 20px;
+    font-weight: 500;
+  }
+  
+  /* Weather Info Card */
+  .weather-info {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .city-info {
+    margin-bottom: 10px;
+  }
+  
+  .city-info h2 {
+    font-size: 2.5rem;
+    margin-bottom: 5px;
+    color: var(--primary-color);
+  }
+  
+  .city-info p {
+    font-size: 1.1rem;
+    color: var(--light-text-color);
+  }
+  
+  .weather-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .temperature-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .temperature-main {
+    font-size: 4.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1; /* Remove extra space below number */
+  }
+  
+  .temperature-main .degree {
+    font-size: 0.8em; /* Make degree symbol slightly smaller than number */
+    vertical-align: super;
+  }
+  
+  .feels-like {
+    font-size: 1.2rem;
+    color: var(--light-text-color);
+  }
+  
+  .weather-icon-container img {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 5px;
+    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5)); /* Add subtle shadow to icon */
+  }
+  
+  .weather-icon-container p {
+    font-size: 1.4rem;
+    font-weight: 500;
+    text-transform: capitalize;
+    color: var(--text-color);
+  }
+  
+  .data-panel {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    padding-top: 20px;
+    border-top: 1px solid var(--input-border); /* Lighter border for dark mode */
+  }
+  
+  .data-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    color: var(--light-text-color);
+  }
+  
+  .data-row .data-icon {
+    color: var(--primary-color);
+    font-size: 1.2rem;
+    width: 20px; /* Fixed width for alignment */
+    text-align: center;
+  }
+  
+  .data-row .data-label {
+    flex-grow: 1;
+    font-weight: 500;
+  }
+  
+  .data-row .data-value {
+    font-weight: 700;
+    color: var(--text-color);
+  }
+  
+  .sun-times {
+    grid-template-columns: 1fr 1fr; /* Two columns for sunrise/sunset */
+    text-align: center;
+  }
+  
+  /* Temperature Range Visualization */
+  .temperature-visualization {
+    width: 100%;
+    padding-top: 20px;
+    border-top: 1px solid var(--input-border);
+  }
+  
+  .temp-range {
+    position: relative;
+    height: 20px;
+    background: linear-gradient(to right, #64b5f6, #81c784, #ffb74d, #e57373); /* Adjusted gradient for dark mode */
+    border-radius: 10px;
+    margin: 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 5px; /* Padding to ensure min/max labels are not cut off */
+  }
+  
+  .temp-min,
+  .temp-max {
+    position: absolute;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--background-color); /* Dark text on gradient */
+    z-index: 1;
+  }
+  
+  .temp-min {
+    left: 5px;
+  }
+  
+  .temp-max {
+    right: 5px;
+  }
+  
+  .temp-indicator {
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    background-color: var(--text-color); /* Light indicator background */
+    border: 3px solid var(--primary-color);
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+    transform: translateX(-50%); /* Center the indicator */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--background-color); /* Dark text on indicator */
+    z-index: 2;
+    transition: left 0.5s ease-out; /* Smooth transition */
+  }
+  
+  .temp-current-label {
+    font-size: 0.8rem;
+    color: var(--background-color); /* Dark text on indicator */
+  }
+  
+  /* Recent Searches */
+  .recent-searches h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+    font-size: 1.4rem;
+    text-align: center;
+  }
+  
+  .tag-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
+  
+  .tag-list li {
+    background-color: #424242; /* Darker tag background */
+    color: var(--light-text-color);
+    padding: 8px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  
+  .tag-list li:hover {
+    background-color: var(--primary-color);
+    color: var(--background-color); /* Dark text on hovered tag */
+  }
+  
+  /* Footer */
+  .app-footer {
+    text-align: center;
+    margin-top: 30px;
+    padding: 20px;
+    font-size: 0.9rem;
+    color: var(--light-text-color);
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+  }
+  
+  .app-footer a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  
+  .app-footer a:hover {
+    text-decoration: underline;
+  }
+  
+  /* Utility classes */
+  .hidden {
+    display: none !important;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 480px) {
+    body {
+      padding: 10px;
+    }
+  
+    .card {
+      padding: 20px;
+    }
+  
+    .search-section {
+      padding: 20px;
+    }
+  
+    .top-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .btn-round {
+      width: 100%;
+      justify-content: center;
+    }
+  
+    .unit-toggle {
+      width: 100%;
+      justify-content: center;
+    }
+  
+    .search-container {
+      flex-direction: column;
+    }
+  
+    .search-container .btn {
+      width: 100%;
+    }
+  
+    .city-info h2 {
+      font-size: 2rem;
+    }
+  
+    .temperature-main {
+      font-size: 3.5rem;
+    }
+  
+    .weather-icon-container img {
+      width: 100px;
+      height: 100px;
+    }
+  
+    .data-panel {
+      grid-template-columns: 1fr;
+    }
+  }
+  .lang-selector {
+    position: relative;
+    display: inline-block;
+    min-width: 120px;
+  }
+  
+  .lang-selector select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: var(--card-background); /* Fundal din tema dark mode */
+    color: var(--text-color); /* Culoarea textului principal */
+    padding: 10px 35px 10px 15px;
+    border: 1px solid var(--input-border); /* Chenar subtil, se integrează cu input-uri */
+    border-radius: var(--border-radius); /* Colțuri rotunjite ca alte elemente */
+    font-size: 1rem;
+    cursor: pointer;
+    outline: none;
+    width: 100%;
+    box-shadow: var(--shadow); /* Umbră similară cu cardurile */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .lang-selector select:hover,
+  .lang-selector select:focus {
+    border-color: var(--primary-color); /* Chenar evidențiat cu culoarea primară */
+    box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.3); /* Folosind o valoare RGB hardcodată pentru primary-color */
+  }
+  
+  /* Săgeata personalizată Font Awesome */
+  .lang-selector::after {
+    content: '\f078'; /* Codul Font Awesome pentru săgeata jos */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--light-text-color); /* Culoare text secundar */
+    pointer-events: none;
+  }
