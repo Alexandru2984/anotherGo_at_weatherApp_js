@@ -27,7 +27,7 @@ Această aplicație meteo intuitivă permite utilizatorilor să obțină informa
 
 ## Captură de Ecran
 
-*(Adaugă aici o imagine sau un link către `/images/appScreenshot.jpg`)*
+![Screenshot cu stilul neon green](images/appScreenshot.jpg)
 
 ---
 
