@@ -1,130 +1,143 @@
-Aplicația Vremea
+# Aplicația Vremea
+
 O aplicație web modernă pentru a verifica condițiile meteo actuale și prognoza pe termen scurt, cu suport pentru mai multe limbi și teme vizuale.
 
-Descriere
+---
+
+## Descriere
+
 Această aplicație meteo intuitivă permite utilizatorilor să obțină informații detaliate despre vreme pentru orice oraș din lume, folosind numele orașului sau locația lor curentă. Este construită modular, asigurând o mentenabilitate ușoară și o scalabilitate crescută.
 
-Funcționalități
-Căutare după oraș: Introduceți numele oricărui oraș pentru a obține date meteo.
+---
 
-Locație curentă: Utilizați geolocalizarea browserului sau locația bazată pe IP pentru a afișa vremea locală.
+## Funcționalități
 
-Unități de temperatură: Comutați între unitățile Celsius (°C) și Fahrenheit (°F).
+- **Căutare după oraș:** Introduceți numele oricărui oraș pentru a obține date meteo.
+- **Locație curentă:** Utilizați geolocalizarea browserului sau locația bazată pe IP.
+- **Unități de temperatură:** Comutați între Celsius (°C) și Fahrenheit (°F).
+- **Căutări recente:** Salvează și afișează o listă de căutări recente pentru acces rapid.
+- **Vizualizare interval de temperatură:** Indicator vizual pentru temperaturile curente față de min/max prognozate.
+- **Detalii meteo complete:** Umiditate, viteza vântului, presiune, răsărit și apus.
+- **Suport i18n:** Schimbare limbă interfață (Română, Engleză).
+- **Teme vizuale:** Light, dark, dark neon, modern light, playful.
+- **Responsive design:** Interfață adaptabilă pentru mobil, tabletă și desktop.
+- **Încărcare din URL:** Ex: `index.html?city=Bucuresti`.
 
-Căutări recente: Salvează și afișează o listă de căutări recente pentru acces rapid.
+---
 
-Vizualizare interval de temperatură: Un indicator vizual al temperaturii curente în raport cu temperaturile minime și maxime din prognoză.
+## Captură de Ecran
 
-Detalii meteo complete: Afișează umiditatea, viteza vântului, presiunea, răsăritul și apusul soarelui.
+*(Adaugă aici o imagine sau un link către `/images/appScreenshot.jpg`)*
 
-Suport pentru mai multe limbi (i18n): Schimbați limba interfeței (Română, Engleză).
+---
 
-Teme vizuale diverse: Aplicația suportă multiple teme CSS (light, dark, dark neon, modern light, playful), fiecare oferind o experiență vizuală unică.
+## Instalare și Rulare Locală
 
-Responsive Design: Interfață adaptabilă pentru dispozitive mobile, tabletă și desktop.
-
-Încărcare din URL: Aplicația poate încărca automat vremea pentru un oraș specificat ca parametru în URL (ex: index.html?city=Bucuresti).
-
-![Captură de Ecran Aplicație Vremea](images/appScreenshot.jpg)
-Instalare și Rulare Locală
 Pentru a rula aplicația local, urmați acești pași:
 
-Clonați depozitul:
+### 1. Clonați depozitul
 
+```bash
 git clone https://github.com/Alexandru2984/anotherGo_at_weatherApp_js
-
 cd anotherGo_at_weatherApp_js
+```
 
-Obțineți o cheie API OpenWeatherMap:
+### 2. Obțineți o cheie API OpenWeatherMap
 
-Mergeți pe OpenWeatherMap.org și creați-vă un cont.
+- Mergeți pe [OpenWeatherMap.org](https://openweathermap.org) și creați un cont
+- Generați o cheie API (gratuită)
 
-Generați o cheie API (gratuită).
+### 3. Configurați cheia API
 
-Configurați cheia API:
+Deschideți fișierul `scripts/config.js` și înlocuiți valoarea:
 
-Deschideți fișierul scripts/config.js.
-
-Înlocuiți "YOUR_OPENWEATHER_API_KEY" cu cheia API obținută de la OpenWeatherMap.
-
-// scripts/config.js
+```js
 export const OPENWEATHER_API_KEY = "CHEIA_TA_API_OPENWEATHERMAP";
+```
 
-Rulați serverul local:
-Această aplicație este o aplicație web statică. O puteți rula deschizând direct fișierul index.html în browser, dar pentru a beneficia de toate funcționalitățile (precum cererile API cross-origin și geolocalizarea), este recomandat să folosiți un server local:
+### 4. Rulați un server local
 
-Cu Live Server (VS Code Extension):
+Este recomandat să folosiți un server local pentru funcționalități complete (ex: geolocalizare, API):
 
-Instalați extensia "Live Server" în VS Code.
+**Cu Live Server (extensie VS Code):**
 
-Deschideți folderul rădăcină al proiectului în VS Code.
+- Instalați extensia *Live Server* în VS Code
+- Deschideți folderul proiectului
+- Click dreapta pe `index.html` → *Open with Live Server*
 
-Faceți clic dreapta pe index.html și selectați "Open with Live Server" sau faceți clic pe butonul "Go Live" din bara de jos a VS Code.
+Aplicația va fi disponibilă la `http://127.0.0.1:5500/` sau `http://localhost:5500/`.
 
-Aplicația va fi accesibilă la http://127.0.0.1:5500/ sau http://localhost:5500/.
+---
 
-Structura Proiectului
-Proiectul este organizat într-o structură modulară pentru o mai bună separare a preocupărilor și mentenabilitate:
+## Structura Proiectului
 
+```
 .
-├── index.html                  # Fișierul HTML principal al aplicației
-├── styles/                     # Conține fișierele CSS pentru stilizare
-│   └── styles.css              # Fișierul CSS principal al temei curente
-└── scripts/                    # Conține toate fișierele JavaScript modularizate
-    ├── app.js                  # Logica principală a aplicației, inițializare, event listeners
-    ├── config.js               # Constante de configurare (chei API, URL-uri)
-    ├── api.js                  # Gestionarea apelurilor către API-urile externe
-    ├── ui.js                   # Funcții pentru manipularea interfeței utilizatorului și traduceri
-    └── utils.js                # Funcții utilitare generale (ex: geolocalizare)
+├── index.html
+├── styles/
+│   ├── styles.css
+│   ├── styles_v1.css
+│   ├── styles_v2.css
+│   ├── styles_v3.css
+│   └── styles_v4.css
+├── scripts/
+│   ├── app.js
+│   ├── config.js
+│   ├── api.js
+│   ├── ui.js
+│   └── utils.js
+└── images/
+    └── appScreenshot.jpg
+```
 
-Tehnologii Folosite
-HTML5: Structura paginii web.
+---
 
-CSS3: Stilizarea și aspectul aplicației, cu suport pentru variabile CSS (custom properties).
+## Tehnologii Folosite
 
-JavaScript (ES6+): Logica aplicației, manipularea DOM-ului, gestionarea API-urilor.
+- **HTML5:** Structura paginii web
+- **CSS3:** Stilizare, variabile CSS
+- **JavaScript (ES6+):** Logica aplicației
+- **Font Awesome:** Iconițe
 
-Font Awesome: Pentru iconițe.
+---
 
-API-uri
-OpenWeatherMap API: Furnizează date meteo curente și prognoze.
+## API-uri
 
-IP-API: Utilizat ca metodă de rezervă pentru a obține locația utilizatorului pe baza adresei IP.
+- **OpenWeatherMap API:** Date meteo și prognoze
+- **IP-API:** Obținere locație pe baza adresei IP
 
-Planuri de Viitor
-Iată câteva idei și direcții de dezvoltare viitoare pentru aplicație:
+---
 
-Securizarea Cheii API: Implementarea comunicării cu un server Python backend pentru a stoca și a gestiona cheia API OpenWeatherMap într-un mod sigur, evitând expunerea acesteia în codul frontend.
+## Planuri de Viitor
 
-Prognoză Extinsă: Adăugarea suportului pentru prognoza meteo pe termen mai lung (de exemplu, 7 sau 14 zile).
+- Securizarea cheii API prin backend
+- Prognoză meteo extinsă (7–14 zile)
+- Notificări meteo
+- Grafice și vizualizări avansate
+- Personalizare temă de către utilizator
+- Autentificare și salvare orașe favorite
 
-Notificări Meteo: Funcționalitatea de a primi notificări pentru schimbări semnificative de vreme sau avertizări.
+---
 
-Grafice și Vizualizări Avansate: Integrarea de grafice pentru a vizualiza tendințele de temperatură, umiditate sau vânt pe parcursul zilei/săptămânii.
+## Contribuții
 
-Personalizare Temă: Opțiuni extinse pentru utilizator de a personaliza culorile sau de a crea teme proprii.
+Contribuțiile sunt binevenite! Urmați acești pași:
 
-Autentificare Utilizator: Posibilitatea de a crea conturi de utilizator pentru a salva orașele favorite sau setările personalizate.
+1. Fork repo-ul
+2. Creați o ramură: `git checkout -b feature/nume-functie`
+3. Comiteți modificările: `git commit -m 'Adaugă funcționalitate'`
+4. Trimiteți modificările: `git push origin feature/nume-functie`
+5. Deschideți un Pull Request
 
-Contribuții
-Contribuțiile sunt binevenite! Dacă doriți să contribuiți, vă rugăm să urmați pașii standard Git:
+---
 
-Fork depozitul.
+## Licență
 
-Creați o ramură nouă (git checkout -b feature/nume-functie).
+Acest proiect este licențiat sub licența MIT.
 
-Efectuați modificările și comiteți-le (git commit -m 'Adaugă o nouă funcție').
+---
 
-Împingeți modificările în ramura voastră (git push origin feature/nume-functie).
+## Contact
 
-Deschideți un Pull Request.
-
-Licență
-Acest proiect este licențiat sub licența MIT (sau specificați licența pe care o folosiți).
-
-Contact
-Pentru întrebări sau feedback, mă puteți contacta la:
-
-Email: alex_mihai984@yahoo.com
-
-GitHub: github.com/Alexandru2984
+- **Email:** alex_mihai984@yahoo.com
+- **GitHub:** [github.com/Alexandru2984](https://github.com/Alexandru2984)
