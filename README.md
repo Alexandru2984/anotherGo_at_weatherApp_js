@@ -64,6 +64,7 @@ Este recomandat să folosiți un server local pentru funcționalități complete
 - Instalați extensia *Live Server* în VS Code
 - Deschideți folderul proiectului
 - Click dreapta pe `index.html` → *Open with Live Server*
+- Puteti ramane la un singur stil.css 
 
 Aplicația va fi disponibilă la `http://127.0.0.1:5500/` sau `http://localhost:5500/`.
 
