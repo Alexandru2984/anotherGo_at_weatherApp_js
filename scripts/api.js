@@ -127,6 +127,23 @@ export async function fetchWeatherAndForecast({ city, lat, lon, units, lang = 'e
 }
 
 /**
+ * Extrage sugestii de orașe pentru autocomplete.
+ * @param {string} query - Textul introdus de utilizator.
+ * @returns {Promise<Array>} Listă de sugestii de locații.
+ */
+export async function fetchCitySuggestions(query) {
+    if (!query || query.trim().length < 2) return [];
+    const url = `${OPENWEATHER_GEO_URL}/direct?q=${encodeURIComponent(query.trim())}&limit=5&appid=${OPENWEATHER_API_KEY}`;
+    try {
+        const res = await fetchWithTimeout(url);
+        if (!res.ok) return [];
+        return await parseJSON(res);
+    } catch {
+        return [];
+    }
+}
+
+/**
  * Extrage date de locație (latitudine și longitudine) pe baza adresei IP.
  * @returns {Promise<{lat: number, lon: number}>}
  */

@@ -1,47 +1,43 @@
 // scripts/app.js
 // Fișierul principal al aplicației meteo, coordonează modulele și gestionează starea.
-// Acest fișier gestionează inițializarea, ascultătorii de evenimente și fluxul aplicației.
 
 import {
   DEFAULT_UNIT,
   MAX_RECENT_SEARCHES,
   STORAGE_KEYS
-} from './config.js'; // Importă constante direct din config.js (în același folder scripts/)
+} from './config.js';
 
-import * as ui from './ui.js';     // Importă întregul modul ui ca obiect
-import * as utils from './utils.js'; // Importă întregul modul utils ca obiect
-import * as api from './api.js';     // Importă întregul modul api ca obiect
-
+import * as ui from './ui.js';
+import * as utils from './utils.js';
+import * as api from './api.js';
 
 // Starea aplicației
 let units = DEFAULT_UNIT;
 let recentSearches = [];
-let currentLanguage = 'ro'; // Adaugă o variabilă pentru limba curentă
-
+let currentLanguage = 'ro';
+let lastWeatherCity = null; // Ultimul oraș căutat (pentru share)
 
 // Cache-ul elementelor DOM
 const elements = {
   searchForm: document.querySelector("#search-form"),
   getLocationButton: document.querySelector("#get-location"),
   tempToggle: document.querySelector("#temp-toggle"),
-  langSelect: document.querySelector("#lang-select"), // Adaugă referința pentru selectorul de limbă
+  langSelect: document.querySelector("#lang-select"),
+  shareBtn: document.querySelector("#share-btn"),
+  clearSearchesBtn: document.querySelector("#clear-searches"),
+  cityInput: document.querySelector("#city-input"),
+  forecastTabs: document.querySelectorAll(".forecast-tab"),
 };
 
-// Inițializează aplicația
+// Inițializare
 initTemperatureUnit();
 initRecentSearchesList();
-initLanguage(); // Noua funcție de inițializare a limbii
+initLanguage();
 displayInitialWeather();
 setupEventListeners();
 
+// ── Funcții de inițializare ──────────────────────────────────────────────────
 
-// Declarații de funcții
-
-/**
- * Funcție utilitară pentru a prelua un parametru din URL.
- * @param {string} name - Numele parametrului.
- * @returns {string} Valoarea parametrului sau un șir gol dacă nu există.
- */
 function getUrlParameter(name) {
     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
     const regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
@@ -49,9 +45,6 @@ function getUrlParameter(name) {
     return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 }
 
-/**
- * Initialize the temperature unit from localStorage
- */
 function initTemperatureUnit() {
   const storedUnit = localStorage.getItem(STORAGE_KEYS.TEMPERATURE_UNIT);
   units = storedUnit || DEFAULT_UNIT;
@@ -59,154 +52,124 @@ function initTemperatureUnit() {
   ui.updateTemperatureUnitDisplay(units);
 }
 
-/**
- * Initialize the recent searches list from localStorage
- */
 function initRecentSearchesList() {
-  const storedSearches = localStorage.getItem(
-    STORAGE_KEYS.RECENT_SEARCHES
-  );
+  const storedSearches = localStorage.getItem(STORAGE_KEYS.RECENT_SEARCHES);
   recentSearches = storedSearches ? JSON.parse(storedSearches) : [];
-  ui.updateRecentSearchesList(recentSearches, displayWeather);
+  ui.updateRecentSearchesList(recentSearches, displayWeather, clearRecentSearches);
 }
 
-/**
- * Initialize the language from localStorage or default.
- * Also applies static UI translations based on the selected language.
- */
 function initLanguage() {
   const storedLang = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
-  currentLanguage = storedLang || 'ro'; // Setează limba implicită la română
-
-  // Setează valoarea selectorului de limbă dacă există
+  currentLanguage = storedLang || 'ro';
   if (elements.langSelect) {
     elements.langSelect.value = currentLanguage;
   }
-  
-  // Aplică traducerile statice UI
-  ui.applyStaticUITranslations(currentLanguage); 
+  ui.applyStaticUITranslations(currentLanguage);
 }
 
-/**
- * Get initial weather data using a fallback strategy:
- * 0. Try 'city' query parameter from URL
- * 1. Try recent searches first
- * 2. Try browser geolocation API
- * 3. Try IP-based geolocation
- * 4. Silently fail if all methods fail
- */
 async function displayInitialWeather() {
-  // 0. Try 'city' query parameter from URL
   const urlCity = getUrlParameter('city');
   if (urlCity) {
     displayWeather({ city: urlCity });
     return;
   }
 
-  // 1. Try to use recent searches if available
   if (recentSearches.length > 0) {
-    const city = recentSearches[0];
-    displayWeather({ city });
+    displayWeather({ city: recentSearches[0] });
     return;
   }
 
-  // 2. Try browser geolocation
   try {
     const { lat, lon } = await utils.getUserLocation();
     displayWeather({ lat, lon });
     return;
-  } catch (error) {
-    // Geolocation failed, trying IP-based location
-  }
+  } catch (_) { /* continuă */ }
 
-  // 3. Try IP-based geolocation as fallback
   try {
     const { lat, lon } = await api.fetchLocationByIP();
     displayWeather({ lat, lon });
-    return;
-  } catch (error) {
-    // IP-based location failed, no weather data shown
-  }
-
-  // 4. If all methods fail, we just show the empty interface
+  } catch (_) { /* interfața goală */ }
 }
 
+// ── Logica principală ────────────────────────────────────────────────────────
+
 function addToRecentSearches(cityName) {
-  // Check if city is already in recent searches
   const index = recentSearches.indexOf(cityName);
-  if (index !== -1) {
-    // Remove it from current position
-    recentSearches.splice(index, 1);
-  }
-
-  // Add to beginning of array
+  if (index !== -1) recentSearches.splice(index, 1);
   recentSearches.unshift(cityName);
+  if (recentSearches.length > MAX_RECENT_SEARCHES) recentSearches.pop();
+  localStorage.setItem(STORAGE_KEYS.RECENT_SEARCHES, JSON.stringify(recentSearches));
+  ui.updateRecentSearchesList(recentSearches, displayWeather, clearRecentSearches);
+}
 
-  // Keep only the most recent searches
-  if (recentSearches.length > MAX_RECENT_SEARCHES) {
-    recentSearches.pop();
-  }
-
-  // Save to localStorage
-  localStorage.setItem(
-    STORAGE_KEYS.RECENT_SEARCHES,
-    JSON.stringify(recentSearches)
-  );
-
-  // Update the UI
-  ui.updateRecentSearchesList(recentSearches, displayWeather);
+function clearRecentSearches() {
+  recentSearches = [];
+  localStorage.removeItem(STORAGE_KEYS.RECENT_SEARCHES);
+  ui.updateRecentSearchesList([], displayWeather, clearRecentSearches);
 }
 
 async function displayWeather({ city, lat, lon }) {
   try {
     ui.showLoading();
     ui.hideError();
+    ui.hideAutocomplete();
 
-    // Fetch weather and forecast data by city name or coordinates
     const data = await api.fetchWeatherAndForecast({
-      city,
-      lat,
-      lon,
-      units,
-      lang: currentLanguage // Trimite limba către API dacă API-ul o suportă
+      city, lat, lon, units, lang: currentLanguage
     });
 
     ui.displayWeatherData(data.weather, data.forecast);
+    lastWeatherCity = data.weather.name;
     addToRecentSearches(data.weather.name);
+
+    // Actualizează URL-ul pentru share fără a reîncărca pagina
+    const newUrl = `${location.pathname}?city=${encodeURIComponent(data.weather.name)}`;
+    history.replaceState(null, '', newUrl);
   } catch (error) {
-    let errorMessageKey = "dataFetchError"; // Cheia implicită de eroare
-    if (error.message.includes("City not found")) {
+    let errorMessageKey = "dataFetchError";
+    if (error.message.includes("City not found") || error.message.includes("Orașul nu a fost găsit")) {
       errorMessageKey = "cityNotFound";
-    } else if (error.message.includes("HTTP error!")) {
-      errorMessageKey = "dataFetchError"; // Sau o cheie mai specifică dacă ai
     } else if (error.message.includes("Locația este blocată")) {
       errorMessageKey = "locationBlocked";
     }
-    ui.showError(errorMessageKey); // Trimite cheia de traducere
+    ui.showError(errorMessageKey);
     console.error("Error fetching weather data:", error);
   } finally {
     ui.hideLoading();
   }
 }
 
+// ── Event Listeners ──────────────────────────────────────────────────────────
+
 function setupEventListeners() {
   elements.searchForm.addEventListener("submit", handleWeatherSearch);
   elements.getLocationButton.addEventListener("click", handleLocationRequest);
   elements.tempToggle.addEventListener("change", handleUnitChange);
-  if (elements.langSelect) { // Adaugă listener pentru selectorul de limbă
-    elements.langSelect.addEventListener("change", handleLanguageChange);
-  }
+  elements.langSelect?.addEventListener("change", handleLanguageChange);
+  elements.shareBtn?.addEventListener("click", handleShare);
+  elements.clearSearchesBtn?.addEventListener("click", clearRecentSearches);
+
+  // Autocomplete
+  elements.cityInput?.addEventListener("input", debounce(handleAutocompleteInput, 300));
+  elements.cityInput?.addEventListener("blur", () => {
+    // Mică întârziere pentru a permite click pe un item din dropdown
+    setTimeout(() => ui.hideAutocomplete(), 150);
+  });
+  elements.cityInput?.addEventListener("keydown", handleAutocompleteKeydown);
+
+  // Tab-uri prognoză
+  elements.forecastTabs.forEach(tab => {
+    tab.addEventListener("click", handleForecastTabSwitch);
+  });
 }
 
 function handleWeatherSearch(event) {
   event.preventDefault();
   const city = new FormData(event.target).get("city")?.trim();
-
   if (!city) {
     ui.showError("enterCityNameError");
     return;
   }
-
   displayWeather({ city });
 }
 
@@ -218,7 +181,6 @@ async function handleLocationRequest() {
     ui.showError(
       error.message.includes("Locația este blocată") ? "locationBlocked" : "locationError"
     );
-    console.error("Geolocation request error:", error);
   }
 }
 
@@ -226,18 +188,99 @@ function handleUnitChange() {
   units = elements.tempToggle.checked ? "imperial" : "metric";
   localStorage.setItem(STORAGE_KEYS.TEMPERATURE_UNIT, units);
   ui.updateTemperatureUnitDisplay(units);
-  displayInitialWeather(); // Re-fetch weather with new units
+  displayInitialWeather();
 }
 
-/**
- * Handles language change event.
- * Updates the current language, saves it to localStorage,
- * applies static UI translations, and refreshes initial weather display.
- * @param {Event} event - The change event from the language select element.
- */
 function handleLanguageChange(event) {
   currentLanguage = event.target.value;
   localStorage.setItem(STORAGE_KEYS.LANGUAGE, currentLanguage);
-  ui.applyStaticUITranslations(currentLanguage); // Aplică traducerile statice
-  displayInitialWeather(); // Re-fetch weather data (dacă API-ul OpenWeatherMap suportă limba, altfel doar reîmprospătează UI-ul)
+  ui.applyStaticUITranslations(currentLanguage);
+  displayInitialWeather();
+}
+
+async function handleShare() {
+  const url = location.href;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: `Vremea în ${lastWeatherCity}`, url });
+    } else {
+      await navigator.clipboard.writeText(url);
+      ui.showSuccess("shareSuccess");
+    }
+  } catch {
+    // Fallback dacă clipboard API nu e disponibil
+    ui.showError("shareNotSupported");
+  }
+}
+
+// ── Autocomplete ─────────────────────────────────────────────────────────────
+
+async function handleAutocompleteInput() {
+  const query = elements.cityInput?.value?.trim();
+  if (!query || query.length < 2) {
+    ui.hideAutocomplete();
+    return;
+  }
+  const suggestions = await api.fetchCitySuggestions(query);
+  ui.showAutocompleteSuggestions(suggestions, (cityName) => {
+    if (elements.cityInput) elements.cityInput.value = cityName;
+    ui.hideAutocomplete();
+    displayWeather({ city: cityName });
+  });
+}
+
+let activeAutocompleteIndex = -1;
+function handleAutocompleteKeydown(e) {
+  const dropdown = document.querySelector("#autocomplete-dropdown");
+  if (!dropdown || dropdown.classList.contains('hidden')) return;
+
+  const items = dropdown.querySelectorAll('.autocomplete-item');
+  if (!items.length) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    activeAutocompleteIndex = Math.min(activeAutocompleteIndex + 1, items.length - 1);
+    items.forEach((item, i) => item.classList.toggle('active', i === activeAutocompleteIndex));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    activeAutocompleteIndex = Math.max(activeAutocompleteIndex - 1, 0);
+    items.forEach((item, i) => item.classList.toggle('active', i === activeAutocompleteIndex));
+  } else if (e.key === 'Enter' && activeAutocompleteIndex >= 0) {
+    e.preventDefault();
+    items[activeAutocompleteIndex]?.click();
+    activeAutocompleteIndex = -1;
+  } else if (e.key === 'Escape') {
+    ui.hideAutocomplete();
+    activeAutocompleteIndex = -1;
+  }
+}
+
+// ── Tab-uri prognoză ─────────────────────────────────────────────────────────
+
+function handleForecastTabSwitch(e) {
+  const tab = e.currentTarget.dataset.tab;
+
+  document.querySelectorAll('.forecast-tab').forEach(t => t.classList.remove('active'));
+  e.currentTarget.classList.add('active');
+
+  const daily = document.querySelector("#daily-forecast");
+  const hourly = document.querySelector("#hourly-forecast");
+
+  if (tab === 'daily') {
+    daily?.classList.remove('hidden');
+    hourly?.classList.add('hidden');
+  } else {
+    daily?.classList.add('hidden');
+    hourly?.classList.remove('hidden');
+  }
+}
+
+// ── Utilitare ────────────────────────────────────────────────────────────────
+
+function debounce(fn, delay) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
 }

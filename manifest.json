@@ -1,0 +1,20 @@
+{
+  "name": "Vremea — Aplicație Meteo",
+  "short_name": "Vremea",
+  "description": "Aplicație meteo cu prognoză pe 5 zile, animații și suport offline.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#212121",
+  "theme_color": "#212121",
+  "lang": "ro",
+  "icons": [
+    {
+      "src": "https://openweathermap.org/img/wn/01d@2x.png",
+      "sizes": "100x100",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["weather", "utilities"]
+}
