@@ -44,8 +44,8 @@ setupEventListeners();
  */
 function getUrlParameter(name) {
     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
-    var results = regex.exec(location.search);
+    const regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
+    const results = regex.exec(location.search);
     return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 }
 
@@ -99,7 +99,6 @@ async function displayInitialWeather() {
   // 0. Try 'city' query parameter from URL
   const urlCity = getUrlParameter('city');
   if (urlCity) {
-    console.log(`Using city from URL parameter: ${urlCity}`);
     displayWeather({ city: urlCity });
     return;
   }
@@ -107,35 +106,29 @@ async function displayInitialWeather() {
   // 1. Try to use recent searches if available
   if (recentSearches.length > 0) {
     const city = recentSearches[0];
-    console.log(`Using most recent search: ${city}`);
     displayWeather({ city });
     return;
   }
 
-  console.log("No recent searches or URL parameter found, trying geolocation...");
-
   // 2. Try browser geolocation
   try {
     const { lat, lon } = await utils.getUserLocation();
-    console.log(`Geolocation successful: ${lat}, ${lon}`);
     displayWeather({ lat, lon });
     return;
   } catch (error) {
-    console.log("Geolocation failed, trying IP-based location...");
+    // Geolocation failed, trying IP-based location
   }
 
   // 3. Try IP-based geolocation as fallback
   try {
     const { lat, lon } = await api.fetchLocationByIP();
-    console.log(`IP location successful: ${lat}, ${lon}`);
     displayWeather({ lat, lon });
     return;
   } catch (error) {
-    console.log("IP-based location failed, no weather data shown");
+    // IP-based location failed, no weather data shown
   }
 
   // 4. If all methods fail, we just show the empty interface
-  console.log("All location methods failed. Showing empty interface.");
 }
 
 function addToRecentSearches(cityName) {
@@ -207,10 +200,10 @@ function setupEventListeners() {
 
 function handleWeatherSearch(event) {
   event.preventDefault();
-  const city = new FormData(event.target).get("city");
+  const city = new FormData(event.target).get("city")?.trim();
 
   if (!city) {
-    ui.showError("enterCityNameError"); // Trimite cheia de traducere corectă
+    ui.showError("enterCityNameError");
     return;
   }
 

@@ -1,6 +1,8 @@
 // scripts/ui.js
 // Acest modul gestionează actualizarea interfeței utilizatorului și traducerile.
 
+import { STORAGE_KEYS } from './config.js';
+
 const UI_elements = {
     loadingSpinner: document.querySelector("#loading-spinner"),
     errorMessage: document.querySelector("#error-message"),
@@ -115,10 +117,7 @@ const UI_elements = {
   }
   
   export function showError(messageKey, lang = 'ro') {
-    // Asigură-te că showMessage primește limba corectă.
-    // În app.js, vei avea acces la currentLanguage, deci o poți trimite aici.
-    // Pentru simplitate, momentan o vom prelua direct din localStorage sau implicit.
-    const currentLang = localStorage.getItem('language') || 'ro';
+    const currentLang = localStorage.getItem(STORAGE_KEYS.LANGUAGE) || 'ro';
     showMessage(messageKey, 'error', currentLang);
   }
   
@@ -321,6 +320,8 @@ const UI_elements = {
    * @param {number} timezoneOffset - Deplasarea fusului orar în secunde față de UTC.
    * @returns {string} Dată și oră formatate.
    */
+  const LOCALE_MAP = { ro: 'ro-RO', en: 'en-US' };
+
   function formatDateTime(timestamp, timezoneOffset) {
     const date = new Date((timestamp + timezoneOffset) * 1000);
     const options = {
@@ -328,12 +329,11 @@ const UI_elements = {
       hour: '2-digit', minute: '2-digit',
       hourCycle: 'h23', // format 24 de ore
     };
-    // Folosește UTC pentru a aplica manual deplasarea fusului orar, apoi formatează local
-    // Folosește `currentLanguage` pentru localizarea datei/orei
-    const currentLang = localStorage.getItem('language') || 'ro';
-    return date.toLocaleString(currentLang + '-'+ currentLang.toUpperCase(), { timeZone: 'UTC', ...options });
+    const currentLang = localStorage.getItem(STORAGE_KEYS.LANGUAGE) || 'ro';
+    const locale = LOCALE_MAP[currentLang] || 'ro-RO';
+    return date.toLocaleString(locale, { timeZone: 'UTC', ...options });
   }
-  
+
   /**
    * Formatează un timestamp Unix într-un șir lizibil de oră (HH:MM).
    * @param {number} timestamp - Timestamp Unix.
@@ -346,9 +346,8 @@ const UI_elements = {
       hour: '2-digit', minute: '2-digit',
       hourCycle: 'h23', // format 24 de ore
     };
-    // Folosește UTC pentru a aplica manual deplasarea fusului orar, apoi formatează local
-    // Folosește `currentLanguage` pentru localizarea orei
-    const currentLang = localStorage.getItem('language') || 'ro';
-    return date.toLocaleString(currentLang + '-'+ currentLang.toUpperCase(), { timeZone: 'UTC', ...options });
+    const currentLang = localStorage.getItem(STORAGE_KEYS.LANGUAGE) || 'ro';
+    const locale = LOCALE_MAP[currentLang] || 'ro-RO';
+    return date.toLocaleString(locale, { timeZone: 'UTC', ...options });
   }
   

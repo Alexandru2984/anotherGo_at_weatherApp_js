@@ -1,0 +1,9 @@
+# Configurație locală cu chei API sensibile — nu commite niciodată acest fișier!
+scripts/config.js
+
+# Dependențe
+node_modules/
+
+# Fișiere sistem
+.DS_Store
+Thumbs.db
