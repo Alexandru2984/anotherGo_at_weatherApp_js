@@ -43,10 +43,24 @@ setupEventListeners();
  * @returns {string} Valoarea parametrului sau un șir gol dacă nu există.
  */
 function getUrlParameter(name) {
-    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
-    var results = regex.exec(location.search);
-    return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+  return new URLSearchParams(window.location.search).get(name) || "";
+}
+
+function normalizeCityInput(city) {
+  return String(city || "").trim().replace(/\s+/g, " ").slice(0, 80);
+}
+
+function readJsonArrayFromStorage(key) {
+  try {
+    const storedValue = localStorage.getItem(key);
+    const parsedValue = storedValue ? JSON.parse(storedValue) : [];
+    return Array.isArray(parsedValue)
+      ? parsedValue.filter((item) => typeof item === "string").slice(0, MAX_RECENT_SEARCHES)
+      : [];
+  } catch {
+    localStorage.removeItem(key);
+    return [];
+  }
 }
 
 /**
@@ -66,7 +80,7 @@ function initRecentSearchesList() {
   const storedSearches = localStorage.getItem(
     STORAGE_KEYS.RECENT_SEARCHES
   );
-  recentSearches = storedSearches ? JSON.parse(storedSearches) : [];
+  recentSearches = storedSearches ? readJsonArrayFromStorage(STORAGE_KEYS.RECENT_SEARCHES) : [];
   ui.updateRecentSearchesList(recentSearches, displayWeather);
 }
 
@@ -97,9 +111,8 @@ function initLanguage() {
  */
 async function displayInitialWeather() {
   // 0. Try 'city' query parameter from URL
-  const urlCity = getUrlParameter('city');
+  const urlCity = normalizeCityInput(getUrlParameter('city'));
   if (urlCity) {
-    console.log(`Using city from URL parameter: ${urlCity}`);
     displayWeather({ city: urlCity });
     return;
   }
@@ -107,47 +120,35 @@ async function displayInitialWeather() {
   // 1. Try to use recent searches if available
   if (recentSearches.length > 0) {
     const city = recentSearches[0];
-    console.log(`Using most recent search: ${city}`);
     displayWeather({ city });
     return;
   }
 
-  console.log("No recent searches or URL parameter found, trying geolocation...");
-
   // 2. Try browser geolocation
   try {
     const { lat, lon } = await utils.getUserLocation();
-    console.log(`Geolocation successful: ${lat}, ${lon}`);
     displayWeather({ lat, lon });
     return;
   } catch (error) {
-    console.log("Geolocation failed, trying IP-based location...");
+    ui.showError(
+      error.message.includes("Locația este blocată") ? "locationBlocked" : "locationError"
+    );
   }
-
-  // 3. Try IP-based geolocation as fallback
-  try {
-    const { lat, lon } = await api.fetchLocationByIP();
-    console.log(`IP location successful: ${lat}, ${lon}`);
-    displayWeather({ lat, lon });
-    return;
-  } catch (error) {
-    console.log("IP-based location failed, no weather data shown");
-  }
-
-  // 4. If all methods fail, we just show the empty interface
-  console.log("All location methods failed. Showing empty interface.");
 }
 
 function addToRecentSearches(cityName) {
+  const safeCityName = normalizeCityInput(cityName);
+  if (!safeCityName) return;
+
   // Check if city is already in recent searches
-  const index = recentSearches.indexOf(cityName);
+  const index = recentSearches.indexOf(safeCityName);
   if (index !== -1) {
     // Remove it from current position
     recentSearches.splice(index, 1);
   }
 
   // Add to beginning of array
-  recentSearches.unshift(cityName);
+  recentSearches.unshift(safeCityName);
 
   // Keep only the most recent searches
   if (recentSearches.length > MAX_RECENT_SEARCHES) {
@@ -182,15 +183,14 @@ async function displayWeather({ city, lat, lon }) {
     addToRecentSearches(data.weather.name);
   } catch (error) {
     let errorMessageKey = "dataFetchError"; // Cheia implicită de eroare
-    if (error.message.includes("City not found")) {
+    if (error.message.includes("Orașul nu a fost găsit") || error.message.includes("City not found")) {
       errorMessageKey = "cityNotFound";
-    } else if (error.message.includes("HTTP error!")) {
+    } else if (error.message.includes("HTTP error!") || error.message.includes("Eroare HTTP!")) {
       errorMessageKey = "dataFetchError"; // Sau o cheie mai specifică dacă ai
     } else if (error.message.includes("Locația este blocată")) {
       errorMessageKey = "locationBlocked";
     }
     ui.showError(errorMessageKey); // Trimite cheia de traducere
-    console.error("Error fetching weather data:", error);
   } finally {
     ui.hideLoading();
   }
@@ -207,7 +207,7 @@ function setupEventListeners() {
 
 function handleWeatherSearch(event) {
   event.preventDefault();
-  const city = new FormData(event.target).get("city");
+  const city = normalizeCityInput(new FormData(event.target).get("city"));
 
   if (!city) {
     ui.showError("enterCityNameError"); // Trimite cheia de traducere corectă
@@ -225,7 +225,6 @@ async function handleLocationRequest() {
     ui.showError(
       error.message.includes("Locația este blocată") ? "locationBlocked" : "locationError"
     );
-    console.error("Geolocation request error:", error);
   }
 }
 

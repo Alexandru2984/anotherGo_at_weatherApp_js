@@ -47,26 +47,37 @@ cd anotherGo_at_weatherApp_js
 - Mergeți pe [OpenWeatherMap.org](https://openweathermap.org) și creați un cont
 - Generați o cheie API (gratuită)
 
-### 3. Configurați cheia API
+### 3. Configurați cheia API pe server
 
-Deschideți fișierul `scripts/config.js` și înlocuiți valoarea:
+Nu puneți cheia în JavaScript public. Copiați `.env.example` în `.env` și completați:
 
-```js
-export const OPENWEATHER_API_KEY = "CHEIA_TA_API_OPENWEATHERMAP";
+```bash
+cp .env.example .env
+nano .env
 ```
 
-### 4. Rulați un server local
+Exemplu:
 
-Este recomandat să folosiți un server local pentru funcționalități complete (ex: geolocalizare, API):
+```env
+OPENWEATHER_API_KEY=cheia_ta_openweathermap
+PORT=3050
+TRUST_PROXY=true
+```
 
-**Cu Live Server (extensie VS Code):**
+### 4. Porniți aplicația
 
-- Instalați extensia *Live Server* în VS Code
-- Deschideți folderul proiectului
-- Click dreapta pe `index.html` → *Open with Live Server*
-- Puteti ramane la un singur stil.css 
+Aplicația include un server Node.js fără dependențe externe. Acesta servește fișierele statice și expune proxy-ul same-origin `/api/openweather`, astfel încât cheia API să nu ajungă în browser.
 
-Aplicația va fi disponibilă la `http://127.0.0.1:5500/` sau `http://localhost:5500/`.
+```bash
+npm start
+```
+
+Aplicația va fi disponibilă la `http://127.0.0.1:3050/`.
+
+Pentru VPS, folosiți exemplele din `deploy/`:
+
+- `deploy/nginx-weather.example.conf` pentru reverse proxy nginx către Node
+- `deploy/weather-app.service.example` pentru systemd
 
 ---
 
@@ -85,8 +96,14 @@ Aplicația va fi disponibilă la `http://127.0.0.1:5500/` sau `http://localhost:
 │   ├── app.js
 │   ├── config.js
 │   ├── api.js
+│   ├── theme.js
 │   ├── ui.js
 │   └── utils.js
+├── deploy/
+│   ├── nginx-weather.example.conf
+│   └── weather-app.service.example
+├── server.js
+├── package.json
 └── images/
     └── appScreenshot.jpg
 ```
@@ -104,8 +121,17 @@ Aplicația va fi disponibilă la `http://127.0.0.1:5500/` sau `http://localhost:
 
 ## API-uri
 
-- **OpenWeatherMap API:** Date meteo și prognoze
-- **IP-API:** Obținere locație pe baza adresei IP
+- **OpenWeatherMap API:** Date meteo și prognoze, apelat prin proxy-ul local `/api/openweather`
+
+## Securitate
+
+- Cheia OpenWeatherMap nu mai este inclusă în frontend; serverul o citește din `.env`.
+- Serverul validează orașele, coordonatele, unitățile și limba înainte să apeleze OpenWeatherMap.
+- Există rate limiting simplu pentru endpointurile API.
+- Răspunsurile includ headere CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` și `Permissions-Policy`.
+- Scriptul inline pentru tema random a fost mutat în `scripts/theme.js`, ca să funcționeze cu CSP fără `unsafe-inline`.
+- Geolocalizarea pe bază de IP a fost eliminată din fluxul automat pentru a evita trimiterea adresei IP către un serviciu terț fără acțiune explicită.
+- Rotiți cheia OpenWeatherMap veche dacă a fost publicată anterior în repository sau deployată în browser.
 
 ---
 

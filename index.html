@@ -3,12 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' https://openweathermap.org data:; connect-src 'self' https://api.openweathermap.org; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <title>Vremea</title>
 
     <!-- Font Awesome for icons -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
     />
 
     <!-- Google Fonts -->
@@ -20,23 +28,8 @@
     />
 
     <!-- Fisierele CSS și JavaScript ale aplicației noastre, cu căile corecte -->
-    <script>
-    // Executat înainte ca pagina să fie randată complet
-    (function () {
-      const styles = [
-        'styles/styles.css',
-        'styles/styles_v1.css',
-        'styles/styles_v2.css',
-        'styles/styles_v3.css',
-        'styles/styles_v4.css'
-      ];
-      const randomStyle = styles[Math.floor(Math.random() * styles.length)];
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = randomStyle;
-      document.head.appendChild(link);
-    })();
-  </script>
+    <link id="app-theme" rel="stylesheet" href="styles/styles.css" />
+    <script src="scripts/theme.js"></script>
     <script type="module" src="scripts/app.js" defer></script>
   </head>
   <body>
@@ -79,6 +72,9 @@
               type="text"
               name="city"
               class="input"
+              minlength="1"
+              maxlength="80"
+              autocomplete="address-level2"
               placeholder="Introduceți numele orașului"
               data-i18n-placeholder="enterCityName"
             />
@@ -187,6 +183,7 @@
         <p>
           <span data-i18n="dataProvidedBy">Date furnizate de</span>
           <a href="https://openweathermap.org/" target="_blank"
+            rel="noopener noreferrer"
             >OpenWeatherMap</a
           >
         </p>

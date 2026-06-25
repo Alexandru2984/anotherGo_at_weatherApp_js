@@ -27,7 +27,7 @@ const UI_elements = {
     searchTextInput: document.querySelector(".search-container .input"),
     recentSearchesSection: document.querySelector("#recent-searches"),
     celsiusLabel: document.querySelector(".unit-toggle > span:first-child"),
-  
+
     // Elemente pentru traduceri statice
     getGeolocationButton: document.querySelector("#get-location span"),
     getGeolocationButtonTitle: document.querySelector("#get-location"), // Pentru atributul title
@@ -44,7 +44,7 @@ const UI_elements = {
     dataProvidedBy: document.querySelector(".app-footer [data-i18n='dataProvidedBy']"),
     weatherIconAlt: document.querySelector("#weather-icon"), // Pentru atributul alt
   };
-  
+
   // Obiectul de traduceri
   const TRANSLATIONS = {
     ro: {
@@ -95,6 +95,11 @@ const UI_elements = {
       locationError: "Could not get your location. Please search for a city manually.",
       enterCityNameError: "Please enter a city name", // Message for empty search field
     },
+  };
+
+  const LOCALES = {
+    ro: 'ro-RO',
+    en: 'en-US',
   };
   
   /**
@@ -188,7 +193,10 @@ const UI_elements = {
     // Descrierea vremii vine direct de la API și este deja tradusă dacă ai trimis lang-ul în API call
     UI_elements.description.textContent = weather.weather[0].description;
     UI_elements.humidity.textContent = weather.main.humidity;
-    UI_elements.windSpeed.textContent = (units === 'metric' ? weather.wind.speed : (weather.wind.speed * 2.237)).toFixed(1); // m/s sau mph
+    UI_elements.windSpeed.textContent = weather.wind.speed.toFixed(1);
+    if (UI_elements.windUnitLabel) {
+      UI_elements.windUnitLabel.textContent = units === 'metric' ? ' m/s' : ' mph';
+    }
     UI_elements.pressure.textContent = weather.main.pressure;
     UI_elements.sunrise.textContent = formatTime(weather.sys.sunrise, weather.timezone);
     UI_elements.sunset.textContent = formatTime(weather.sys.sunset, weather.timezone);
@@ -231,7 +239,7 @@ const UI_elements = {
     const list = UI_elements.recentSearchesList;
     if (!list) return; // Asigură-te că lista există
   
-    list.innerHTML = ""; // Golește lista existentă
+    list.replaceChildren(); // Golește lista existentă fără HTML parsing
   
     if (searches.length === 0) {
       if (UI_elements.recentSearchesSection) {
@@ -331,9 +339,8 @@ const UI_elements = {
     // Folosește UTC pentru a aplica manual deplasarea fusului orar, apoi formatează local
     // Folosește `currentLanguage` pentru localizarea datei/orei
     const currentLang = localStorage.getItem('language') || 'ro';
-    return date.toLocaleString(currentLang + '-'+ currentLang.toUpperCase(), { timeZone: 'UTC', ...options });
+    return date.toLocaleString(LOCALES[currentLang] || LOCALES.ro, { timeZone: 'UTC', ...options });
   }
-  
   /**
    * Formatează un timestamp Unix într-un șir lizibil de oră (HH:MM).
    * @param {number} timestamp - Timestamp Unix.
@@ -349,6 +356,5 @@ const UI_elements = {
     // Folosește UTC pentru a aplica manual deplasarea fusului orar, apoi formatează local
     // Folosește `currentLanguage` pentru localizarea orei
     const currentLang = localStorage.getItem('language') || 'ro';
-    return date.toLocaleString(currentLang + '-'+ currentLang.toUpperCase(), { timeZone: 'UTC', ...options });
+    return date.toLocaleString(LOCALES[currentLang] || LOCALES.ro, { timeZone: 'UTC', ...options });
   }
-  
