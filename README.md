@@ -16,6 +16,9 @@ Această aplicație meteo intuitivă permite utilizatorilor să obțină informa
 - **Locație curentă:** Utilizați geolocalizarea browserului sau locația bazată pe IP.
 - **Unități de temperatură:** Comutați între Celsius (°C) și Fahrenheit (°F).
 - **Căutări recente:** Salvează și afișează o listă de căutări recente pentru acces rapid.
+- **Favorite locale:** Salvează orașe favorite în browser pentru acces rapid.
+- **Share link:** Copiază un link direct către orașul afișat.
+- **Prognoză pe 5 zile:** Afișează carduri zilnice cu temperatură, umiditate și vânt.
 - **Vizualizare interval de temperatură:** Indicator vizual pentru temperaturile curente față de min/max prognozate.
 - **Detalii meteo complete:** Umiditate, viteza vântului, presiune, răsărit și apus.
 - **Suport i18n:** Schimbare limbă interfață (Română, Engleză).

@@ -101,6 +101,29 @@
             <p id="date-time"></p>
           </div>
 
+          <div class="weather-actions">
+            <button
+              id="save-favorite"
+              class="btn btn-small"
+              type="button"
+              title="Salvează la favorite"
+              data-i18n-title="saveFavorite"
+            >
+              <i class="fas fa-star"></i>
+              <span data-i18n="saveFavorite">Favorite</span>
+            </button>
+            <button
+              id="share-weather"
+              class="btn btn-small"
+              type="button"
+              title="Copiază link"
+              data-i18n-title="copyLink"
+            >
+              <i class="fas fa-link"></i>
+              <span data-i18n="copyLink">Copiază link</span>
+            </button>
+          </div>
+
           <div class="weather-main">
             <div class="temperature-container">
               <div class="temperature-main">
@@ -170,6 +193,18 @@
               <div id="temp-max" class="temp-max"></div>
             </div>
           </div>
+        </section>
+
+        <!-- Forecast -->
+        <section id="forecast-section" class="card forecast-section hidden">
+          <h3 data-i18n="forecastTitle">Prognoză pe 5 zile</h3>
+          <div id="forecast-list" class="forecast-grid"></div>
+        </section>
+
+        <!-- Favorite Searches -->
+        <section id="favorite-searches" class="card favorite-searches hidden">
+          <h3 data-i18n="favoriteSearchesTitle">Favorite</h3>
+          <ul id="favorite-list" class="tag-list"></ul>
         </section>
 
         <!-- Recent Searches -->

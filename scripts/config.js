@@ -7,9 +7,11 @@ export const OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5";
 export const OPENWEATHER_GEO_URL = "https://api.openweathermap.org/geo/1.0";
 export const DEFAULT_UNIT = "metric"; // Unități de măsură implicite: metric (Celsius) sau imperial (Fahrenheit)
 export const MAX_RECENT_SEARCHES = 5; // Numărul maxim de căutări recente de păstrat
+export const MAX_FAVORITE_CITIES = 8;
 
 export const STORAGE_KEYS = {
     TEMPERATURE_UNIT: "temperatureUnit",
     RECENT_SEARCHES: "recentSearches",
+    FAVORITE_CITIES: "favoriteCities",
     LANGUAGE: "language" // Adăugat: Cheie pentru stocarea limbii selectate
 };

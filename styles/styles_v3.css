@@ -468,4 +468,58 @@ input:checked + .slider:before {
   .lang-selector select:focus + .lang-selector::after {
     color: var(--dark-blue); /* Săgeată albastru închis la hover/focus */
   }
-  
+
+  .weather-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 15px 0 5px;
+  }
+
+  .btn-small {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+  }
+
+  .btn.is-active {
+    background-color: var(--dark-blue, var(--primary-color));
+  }
+
+  .forecast-section,
+  .favorite-searches {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    gap: 12px;
+  }
+
+  .forecast-card {
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    padding: 12px;
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.12));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--card-bg, #ffffff) 88%, var(--primary-color) 12%);
+  }
+
+  .forecast-icon {
+    width: 54px;
+    height: 54px;
+  }
+
+  .forecast-day,
+  .forecast-meta {
+    color: var(--secondary-color, var(--text-color));
+    font-size: 0.86rem;
+    text-align: center;
+  }
+
+  .forecast-temp {
+    font-size: 1.4rem;
+  }

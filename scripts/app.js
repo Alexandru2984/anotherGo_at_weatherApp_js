@@ -4,6 +4,7 @@
 
 import {
   DEFAULT_UNIT,
+  MAX_FAVORITE_CITIES,
   MAX_RECENT_SEARCHES,
   STORAGE_KEYS
 } from './config.js'; // Importă constante direct din config.js (în același folder scripts/)
@@ -16,7 +17,9 @@ import * as api from './api.js';     // Importă întregul modul api ca obiect
 // Starea aplicației
 let units = DEFAULT_UNIT;
 let recentSearches = [];
+let favoriteCities = [];
 let currentLanguage = 'ro'; // Adaugă o variabilă pentru limba curentă
+let currentCityName = "";
 
 
 // Cache-ul elementelor DOM
@@ -25,11 +28,14 @@ const elements = {
   getLocationButton: document.querySelector("#get-location"),
   tempToggle: document.querySelector("#temp-toggle"),
   langSelect: document.querySelector("#lang-select"), // Adaugă referința pentru selectorul de limbă
+  saveFavoriteButton: document.querySelector("#save-favorite"),
+  shareWeatherButton: document.querySelector("#share-weather"),
 };
 
 // Inițializează aplicația
 initTemperatureUnit();
 initRecentSearchesList();
+initFavoriteCitiesList();
 initLanguage(); // Noua funcție de inițializare a limbii
 displayInitialWeather();
 setupEventListeners();
@@ -55,7 +61,7 @@ function readJsonArrayFromStorage(key) {
     const storedValue = localStorage.getItem(key);
     const parsedValue = storedValue ? JSON.parse(storedValue) : [];
     return Array.isArray(parsedValue)
-      ? parsedValue.filter((item) => typeof item === "string").slice(0, MAX_RECENT_SEARCHES)
+      ? parsedValue.filter((item) => typeof item === "string")
       : [];
   } catch {
     localStorage.removeItem(key);
@@ -77,11 +83,18 @@ function initTemperatureUnit() {
  * Initialize the recent searches list from localStorage
  */
 function initRecentSearchesList() {
-  const storedSearches = localStorage.getItem(
-    STORAGE_KEYS.RECENT_SEARCHES
-  );
-  recentSearches = storedSearches ? readJsonArrayFromStorage(STORAGE_KEYS.RECENT_SEARCHES) : [];
+  recentSearches = readJsonArrayFromStorage(STORAGE_KEYS.RECENT_SEARCHES)
+    .slice(0, MAX_RECENT_SEARCHES);
   ui.updateRecentSearchesList(recentSearches, displayWeather);
+}
+
+/**
+ * Initialize the favorite city list from localStorage
+ */
+function initFavoriteCitiesList() {
+  favoriteCities = readJsonArrayFromStorage(STORAGE_KEYS.FAVORITE_CITIES)
+    .slice(0, MAX_FAVORITE_CITIES);
+  ui.updateFavoriteCitiesList(favoriteCities, displayWeather);
 }
 
 /**
@@ -165,6 +178,44 @@ function addToRecentSearches(cityName) {
   ui.updateRecentSearchesList(recentSearches, displayWeather);
 }
 
+function saveFavoriteCities() {
+  localStorage.setItem(
+    STORAGE_KEYS.FAVORITE_CITIES,
+    JSON.stringify(favoriteCities)
+  );
+  ui.updateFavoriteCitiesList(favoriteCities, displayWeather);
+  ui.updateFavoriteButton(currentCityName, favoriteCities);
+}
+
+function toggleCurrentFavorite() {
+  if (!currentCityName) return;
+
+  const index = favoriteCities.indexOf(currentCityName);
+  if (index !== -1) {
+    favoriteCities.splice(index, 1);
+  } else {
+    favoriteCities.unshift(currentCityName);
+    favoriteCities = favoriteCities.slice(0, MAX_FAVORITE_CITIES);
+  }
+
+  saveFavoriteCities();
+}
+
+async function shareCurrentWeather() {
+  if (!currentCityName) return;
+
+  const shareUrl = new URL(window.location.href);
+  shareUrl.search = "";
+  shareUrl.searchParams.set("city", currentCityName);
+
+  try {
+    await navigator.clipboard.writeText(shareUrl.toString());
+    ui.showSuccess("linkCopied");
+  } catch {
+    ui.showError("linkCopyError");
+  }
+}
+
 async function displayWeather({ city, lat, lon }) {
   try {
     ui.showLoading();
@@ -180,6 +231,8 @@ async function displayWeather({ city, lat, lon }) {
     });
 
     ui.displayWeatherData(data.weather, data.forecast);
+    currentCityName = normalizeCityInput(data.weather.name);
+    ui.updateFavoriteButton(currentCityName, favoriteCities);
     addToRecentSearches(data.weather.name);
   } catch (error) {
     let errorMessageKey = "dataFetchError"; // Cheia implicită de eroare
@@ -200,6 +253,8 @@ function setupEventListeners() {
   elements.searchForm.addEventListener("submit", handleWeatherSearch);
   elements.getLocationButton.addEventListener("click", handleLocationRequest);
   elements.tempToggle.addEventListener("change", handleUnitChange);
+  elements.saveFavoriteButton.addEventListener("click", toggleCurrentFavorite);
+  elements.shareWeatherButton.addEventListener("click", shareCurrentWeather);
   if (elements.langSelect) { // Adaugă listener pentru selectorul de limbă
     elements.langSelect.addEventListener("change", handleLanguageChange);
   }
@@ -245,5 +300,6 @@ function handleLanguageChange(event) {
   currentLanguage = event.target.value;
   localStorage.setItem(STORAGE_KEYS.LANGUAGE, currentLanguage);
   ui.applyStaticUITranslations(currentLanguage); // Aplică traducerile statice
+  ui.updateFavoriteButton(currentCityName, favoriteCities);
   displayInitialWeather(); // Re-fetch weather data (dacă API-ul OpenWeatherMap suportă limba, altfel doar reîmprospătează UI-ul)
 }

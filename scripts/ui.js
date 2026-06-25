@@ -26,6 +26,12 @@ const UI_elements = {
     tempCurrentLabel: document.querySelector("#temp-current-label"),
     searchTextInput: document.querySelector(".search-container .input"),
     recentSearchesSection: document.querySelector("#recent-searches"),
+    favoriteSearchesSection: document.querySelector("#favorite-searches"),
+    favoriteSearchesList: document.querySelector("#favorite-list"),
+    forecastSection: document.querySelector("#forecast-section"),
+    forecastList: document.querySelector("#forecast-list"),
+    saveFavoriteButton: document.querySelector("#save-favorite"),
+    shareWeatherButton: document.querySelector("#share-weather"),
     celsiusLabel: document.querySelector(".unit-toggle > span:first-child"),
 
     // Elemente pentru traduceri statice
@@ -41,6 +47,10 @@ const UI_elements = {
     sunriseLabel: document.querySelector(".sun-times [data-i18n='sunrise']"),
     sunsetLabel: document.querySelector(".sun-times [data-i18n='sunset']"),
     recentSearchesTitle: document.querySelector("#recent-searches h3"),
+    favoriteSearchesTitle: document.querySelector("#favorite-searches h3"),
+    forecastTitle: document.querySelector("#forecast-section h3"),
+    saveFavoriteLabel: document.querySelector("#save-favorite span"),
+    copyLinkLabel: document.querySelector("#share-weather span"),
     dataProvidedBy: document.querySelector(".app-footer [data-i18n='dataProvidedBy']"),
     weatherIconAlt: document.querySelector("#weather-icon"), // Pentru atributul alt
   };
@@ -62,7 +72,14 @@ const UI_elements = {
       pressureUnit: " hPa",
       sunrise: "Răsărit",
       sunset: "Apus",
+      forecastTitle: "Prognoză pe 5 zile",
       recentSearchesTitle: "Căutări Recente",
+      favoriteSearchesTitle: "Favorite",
+      saveFavorite: "Favorite",
+      removeFavorite: "Favorit salvat",
+      copyLink: "Copiază link",
+      linkCopied: "Linkul a fost copiat.",
+      linkCopyError: "Nu am putut copia linkul.",
       dataProvidedBy: "Date furnizate de",
       // Mesaje de eroare
       dataFetchError: "Nu am putut obține datele meteo. Verificați numele orașului și încercați din nou.",
@@ -86,7 +103,14 @@ const UI_elements = {
       pressureUnit: " hPa",
       sunrise: "Sunrise",
       sunset: "Sunset",
+      forecastTitle: "5-day forecast",
       recentSearchesTitle: "Recent Searches",
+      favoriteSearchesTitle: "Favorites",
+      saveFavorite: "Favorite",
+      removeFavorite: "Saved favorite",
+      copyLink: "Copy link",
+      linkCopied: "Link copied.",
+      linkCopyError: "Could not copy the link.",
       dataProvidedBy: "Data provided by",
       // Error messages
       dataFetchError: "Could not fetch weather data. Please check the city name and try again.",
@@ -130,7 +154,8 @@ const UI_elements = {
   export function showSuccess(message, lang = 'ro') {
     // Pentru mesaje de succes care nu sunt neapărat din TRANSLATIONS, poți folosi direct stringul.
     // Dacă vrei să le traduci, va trebui să adaugi chei în TRANSLATIONS.
-    showMessage(message, 'success', lang);
+    const currentLang = localStorage.getItem('language') || lang;
+    showMessage(message, 'success', currentLang);
   }
   
   export function hideError() {
@@ -141,6 +166,8 @@ const UI_elements = {
     UI_elements.loadingSpinner.classList.remove("hidden");
     UI_elements.weatherInfo.classList.add("hidden");
     UI_elements.recentSearchesSection.classList.add("hidden");
+    UI_elements.favoriteSearchesSection.classList.add("hidden");
+    UI_elements.forecastSection.classList.add("hidden");
     hideError();
   }
   
@@ -221,13 +248,79 @@ const UI_elements = {
     positionPercentage = Math.max(0, Math.min(100, positionPercentage));
   
     UI_elements.tempIndicator.style.left = `${positionPercentage}%`;
-  
+    displayForecastCards(forecast, units);
   
     UI_elements.weatherInfo.classList.remove("hidden");
     UI_elements.recentSearchesSection.classList.remove("hidden");
+    UI_elements.favoriteSearchesSection.classList.remove("hidden");
     if (UI_elements.searchTextInput) { // Verifică dacă elementul există înainte de a încerca să-l setezi
         UI_elements.searchTextInput.value = ''; // Golește câmpul de căutare
     }
+  }
+
+  function getDailyForecastItems(forecast) {
+    if (!forecast || !Array.isArray(forecast.list)) return [];
+
+    const dailyItems = new Map();
+    forecast.list.forEach((item) => {
+      const dateKey = new Date(item.dt * 1000).toISOString().slice(0, 10);
+      const hour = new Date(item.dt * 1000).getUTCHours();
+      const existingItem = dailyItems.get(dateKey);
+
+      if (!existingItem || Math.abs(hour - 12) < Math.abs(existingItem.hour - 12)) {
+        dailyItems.set(dateKey, {
+          hour,
+          item,
+        });
+      }
+    });
+
+    return Array.from(dailyItems.values()).slice(0, 5).map(({ item }) => item);
+  }
+
+  function displayForecastCards(forecast, units) {
+    const forecastList = UI_elements.forecastList;
+    if (!forecastList) return;
+
+    forecastList.replaceChildren();
+    const dailyItems = getDailyForecastItems(forecast);
+
+    if (dailyItems.length === 0) {
+      UI_elements.forecastSection.classList.add("hidden");
+      return;
+    }
+
+    const currentLang = localStorage.getItem('language') || 'ro';
+    dailyItems.forEach((item) => {
+      const card = document.createElement("article");
+      card.className = "forecast-card";
+
+      const date = document.createElement("span");
+      date.className = "forecast-day";
+      date.textContent = new Date(item.dt * 1000).toLocaleDateString(
+        LOCALES[currentLang] || LOCALES.ro,
+        { weekday: "short", day: "2-digit", month: "short" }
+      );
+
+      const icon = document.createElement("img");
+      icon.className = "forecast-icon";
+      icon.src = `https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`;
+      icon.alt = item.weather[0].description;
+      icon.loading = "lazy";
+
+      const temp = document.createElement("strong");
+      temp.className = "forecast-temp";
+      temp.textContent = `${Math.round(item.main.temp)}°`;
+
+      const meta = document.createElement("span");
+      meta.className = "forecast-meta";
+      meta.textContent = `${Math.round(item.main.humidity)}% · ${item.wind.speed.toFixed(1)}${units === "metric" ? " m/s" : " mph"}`;
+
+      card.append(date, icon, temp, meta);
+      forecastList.appendChild(card);
+    });
+
+    UI_elements.forecastSection.classList.remove("hidden");
   }
   
   /**
@@ -258,6 +351,38 @@ const UI_elements = {
       listItem.addEventListener("click", () => clickHandler({ city }));
       list.appendChild(listItem);
     });
+  }
+
+  export function updateFavoriteCitiesList(cities, clickHandler) {
+    const list = UI_elements.favoriteSearchesList;
+    if (!list) return;
+
+    list.replaceChildren();
+
+    if (cities.length === 0) {
+      UI_elements.favoriteSearchesSection.classList.add("hidden");
+      return;
+    }
+
+    UI_elements.favoriteSearchesSection.classList.remove("hidden");
+    cities.forEach((city) => {
+      const listItem = document.createElement("li");
+      listItem.textContent = city;
+      listItem.addEventListener("click", () => clickHandler({ city }));
+      list.appendChild(listItem);
+    });
+  }
+
+  export function updateFavoriteButton(cityName, favoriteCities) {
+    if (!UI_elements.saveFavoriteButton || !UI_elements.saveFavoriteLabel) return;
+
+    const currentLang = localStorage.getItem('language') || 'ro';
+    const translations = TRANSLATIONS[currentLang] || TRANSLATIONS.ro;
+    const isFavorite = favoriteCities.includes(cityName);
+
+    UI_elements.saveFavoriteButton.classList.toggle("is-active", isFavorite);
+    UI_elements.saveFavoriteButton.title = translations[isFavorite ? "removeFavorite" : "saveFavorite"];
+    UI_elements.saveFavoriteLabel.textContent = translations[isFavorite ? "removeFavorite" : "saveFavorite"];
   }
   
   /**
@@ -312,6 +437,24 @@ const UI_elements = {
     }
     if (UI_elements.recentSearchesTitle) {
         UI_elements.recentSearchesTitle.textContent = currentTranslations.recentSearchesTitle;
+    }
+    if (UI_elements.favoriteSearchesTitle) {
+        UI_elements.favoriteSearchesTitle.textContent = currentTranslations.favoriteSearchesTitle;
+    }
+    if (UI_elements.forecastTitle) {
+        UI_elements.forecastTitle.textContent = currentTranslations.forecastTitle;
+    }
+    if (UI_elements.saveFavoriteButton) {
+        UI_elements.saveFavoriteButton.title = currentTranslations.saveFavorite;
+    }
+    if (UI_elements.saveFavoriteLabel) {
+        UI_elements.saveFavoriteLabel.textContent = currentTranslations.saveFavorite;
+    }
+    if (UI_elements.shareWeatherButton) {
+        UI_elements.shareWeatherButton.title = currentTranslations.copyLink;
+    }
+    if (UI_elements.copyLinkLabel) {
+        UI_elements.copyLinkLabel.textContent = currentTranslations.copyLink;
     }
     if (UI_elements.dataProvidedBy) {
         UI_elements.dataProvidedBy.textContent = currentTranslations.dataProvidedBy;
