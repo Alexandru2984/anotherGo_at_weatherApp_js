@@ -1,20 +1,20 @@
-const CACHE_NAME = "weather-app-v4";
+const CACHE_NAME = "weather-app-v5";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/offline.html",
   "/manifest.webmanifest",
-  "/scripts/api.js?v=20260625-2",
-  "/scripts/app.js?v=20260625-2",
-  "/scripts/config.js?v=20260625-2",
-  "/scripts/theme.js?v=20260625-2",
-  "/scripts/ui.js?v=20260625-2",
-  "/scripts/utils.js?v=20260625-2",
-  "/styles/styles.css?v=20260625-2",
-  "/styles/styles_v1.css?v=20260625-2",
-  "/styles/styles_v2.css?v=20260625-2",
-  "/styles/styles_v3.css?v=20260625-2",
-  "/styles/styles_v4.css?v=20260625-2",
+  "/scripts/api.js?v=20260625-3",
+  "/scripts/app.js?v=20260625-3",
+  "/scripts/config.js?v=20260625-3",
+  "/scripts/theme.js?v=20260625-3",
+  "/scripts/ui.js?v=20260625-3",
+  "/scripts/utils.js?v=20260625-3",
+  "/styles/styles.css?v=20260625-3",
+  "/styles/styles_v1.css?v=20260625-3",
+  "/styles/styles_v2.css?v=20260625-3",
+  "/styles/styles_v3.css?v=20260625-3",
+  "/styles/styles_v4.css?v=20260625-3",
   "/images/appScreenshot.jpg",
 ];
 

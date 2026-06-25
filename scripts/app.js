@@ -7,11 +7,11 @@ import {
   MAX_FAVORITE_CITIES,
   MAX_RECENT_SEARCHES,
   STORAGE_KEYS
-} from './config.js?v=20260625-2'; // Importă constante direct din config.js (în același folder scripts/)
+} from './config.js?v=20260625-3'; // Importă constante direct din config.js (în același folder scripts/)
 
-import * as ui from './ui.js?v=20260625-2';     // Importă întregul modul ui ca obiect
-import * as utils from './utils.js?v=20260625-2'; // Importă întregul modul utils ca obiect
-import * as api from './api.js?v=20260625-2';     // Importă întregul modul api ca obiect
+import * as ui from './ui.js?v=20260625-3';     // Importă întregul modul ui ca obiect
+import * as utils from './utils.js?v=20260625-3'; // Importă întregul modul utils ca obiect
+import * as api from './api.js?v=20260625-3';     // Importă întregul modul api ca obiect
 
 
 // Starea aplicației
@@ -34,6 +34,8 @@ const elements = {
   saveFavoriteButton: document.querySelector("#save-favorite"),
   shareWeatherButton: document.querySelector("#share-weather"),
   refreshWeatherButton: document.querySelector("#refresh-weather"),
+  clearFavoritesButton: document.querySelector("#clear-favorites"),
+  clearRecentButton: document.querySelector("#clear-recent"),
 };
 
 // Inițializează aplicația
@@ -92,7 +94,7 @@ function initTemperatureUnit() {
 function initRecentSearchesList() {
   recentSearches = readJsonArrayFromStorage(STORAGE_KEYS.RECENT_SEARCHES)
     .slice(0, MAX_RECENT_SEARCHES);
-  ui.updateRecentSearchesList(recentSearches, displayWeather);
+  ui.updateRecentSearchesList(recentSearches, displayWeather, removeRecentSearch);
 }
 
 /**
@@ -101,7 +103,7 @@ function initRecentSearchesList() {
 function initFavoriteCitiesList() {
   favoriteCities = readJsonArrayFromStorage(STORAGE_KEYS.FAVORITE_CITIES)
     .slice(0, MAX_FAVORITE_CITIES);
-  ui.updateFavoriteCitiesList(favoriteCities, displayWeather);
+  ui.updateFavoriteCitiesList(favoriteCities, displayWeather, removeFavoriteCity);
 }
 
 /**
@@ -182,7 +184,25 @@ function addToRecentSearches(cityName) {
   );
 
   // Update the UI
-  ui.updateRecentSearchesList(recentSearches, displayWeather);
+  ui.updateRecentSearchesList(recentSearches, displayWeather, removeRecentSearch);
+}
+
+function saveRecentSearches() {
+  localStorage.setItem(
+    STORAGE_KEYS.RECENT_SEARCHES,
+    JSON.stringify(recentSearches)
+  );
+  ui.updateRecentSearchesList(recentSearches, displayWeather, removeRecentSearch);
+}
+
+function removeRecentSearch(cityName) {
+  recentSearches = recentSearches.filter((city) => city !== cityName);
+  saveRecentSearches();
+}
+
+function clearRecentSearches() {
+  recentSearches = [];
+  saveRecentSearches();
 }
 
 function saveFavoriteCities() {
@@ -190,8 +210,18 @@ function saveFavoriteCities() {
     STORAGE_KEYS.FAVORITE_CITIES,
     JSON.stringify(favoriteCities)
   );
-  ui.updateFavoriteCitiesList(favoriteCities, displayWeather);
+  ui.updateFavoriteCitiesList(favoriteCities, displayWeather, removeFavoriteCity);
   ui.updateFavoriteButton(currentCityName, favoriteCities);
+}
+
+function removeFavoriteCity(cityName) {
+  favoriteCities = favoriteCities.filter((city) => city !== cityName);
+  saveFavoriteCities();
+}
+
+function clearFavoriteCities() {
+  favoriteCities = [];
+  saveFavoriteCities();
 }
 
 function toggleCurrentFavorite() {
@@ -265,6 +295,8 @@ function setupEventListeners() {
   elements.saveFavoriteButton.addEventListener("click", toggleCurrentFavorite);
   elements.shareWeatherButton.addEventListener("click", shareCurrentWeather);
   elements.refreshWeatherButton.addEventListener("click", refreshCurrentWeather);
+  elements.clearFavoritesButton.addEventListener("click", clearFavoriteCities);
+  elements.clearRecentButton.addEventListener("click", clearRecentSearches);
   elements.cityInput.addEventListener("input", handleCityInput);
   if (elements.langSelect) { // Adaugă listener pentru selectorul de limbă
     elements.langSelect.addEventListener("change", handleLanguageChange);

@@ -35,6 +35,8 @@ const UI_elements = {
     saveFavoriteButton: document.querySelector("#save-favorite"),
     shareWeatherButton: document.querySelector("#share-weather"),
     refreshWeatherButton: document.querySelector("#refresh-weather"),
+    clearFavoritesButton: document.querySelector("#clear-favorites span"),
+    clearRecentButton: document.querySelector("#clear-recent span"),
     celsiusLabel: document.querySelector(".unit-toggle > span:first-child"),
 
     // Elemente pentru traduceri statice
@@ -83,6 +85,8 @@ const UI_elements = {
       removeFavorite: "Favorit salvat",
       copyLink: "Copiază link",
       refreshWeather: "Actualizează",
+      clearAll: "Șterge tot",
+      removeCity: "Șterge orașul",
       linkCopied: "Linkul a fost copiat.",
       linkCopyError: "Nu am putut copia linkul.",
       alertThunderstorm: "Risc de furtună în prognoza apropiată.",
@@ -121,6 +125,8 @@ const UI_elements = {
       removeFavorite: "Saved favorite",
       copyLink: "Copy link",
       refreshWeather: "Refresh",
+      clearAll: "Clear all",
+      removeCity: "Remove city",
       linkCopied: "Link copied.",
       linkCopyError: "Could not copy the link.",
       alertThunderstorm: "Thunderstorm risk in the nearby forecast.",
@@ -457,7 +463,34 @@ const UI_elements = {
    * @param {Array<string>} searches - Tablou cu numele orașelor căutate recent.
    * @param {Function} clickHandler - Funcția de apelat când se face clic pe o etichetă de căutare recentă.
    */
-  export function updateRecentSearchesList(searches, clickHandler) {
+  function createCityTag(city, clickHandler, removeHandler) {
+    const listItem = document.createElement("li");
+    const label = document.createElement("button");
+    const remove = document.createElement("button");
+    const currentLang = localStorage.getItem('language') || 'ro';
+    const translations = TRANSLATIONS[currentLang] || TRANSLATIONS.ro;
+
+    label.type = "button";
+    label.className = "tag-action";
+    label.textContent = city;
+    label.addEventListener("click", () => clickHandler({ city }));
+
+    remove.type = "button";
+    remove.className = "tag-remove";
+    remove.title = translations.removeCity;
+    remove.setAttribute("aria-label", `${translations.removeCity}: ${city}`);
+    remove.textContent = "×";
+    remove.addEventListener("click", (event) => {
+      event.stopPropagation();
+      removeHandler(city);
+    });
+
+    listItem.className = "tag-item";
+    listItem.append(label, remove);
+    return listItem;
+  }
+
+  export function updateRecentSearchesList(searches, clickHandler, removeHandler) {
     const list = UI_elements.recentSearchesList;
     if (!list) return; // Asigură-te că lista există
   
@@ -475,10 +508,7 @@ const UI_elements = {
     }
   
     searches.forEach((city) => {
-      const listItem = document.createElement("li");
-      listItem.textContent = city;
-      listItem.addEventListener("click", () => clickHandler({ city }));
-      list.appendChild(listItem);
+      list.appendChild(createCityTag(city, clickHandler, removeHandler));
     });
   }
 
@@ -497,7 +527,7 @@ const UI_elements = {
     });
   }
 
-  export function updateFavoriteCitiesList(cities, clickHandler) {
+  export function updateFavoriteCitiesList(cities, clickHandler, removeHandler) {
     const list = UI_elements.favoriteSearchesList;
     if (!list) return;
 
@@ -510,10 +540,7 @@ const UI_elements = {
 
     UI_elements.favoriteSearchesSection.classList.remove("hidden");
     cities.forEach((city) => {
-      const listItem = document.createElement("li");
-      listItem.textContent = city;
-      listItem.addEventListener("click", () => clickHandler({ city }));
-      list.appendChild(listItem);
+      list.appendChild(createCityTag(city, clickHandler, removeHandler));
     });
   }
 
@@ -605,6 +632,12 @@ const UI_elements = {
     }
     if (UI_elements.refreshWeatherLabel) {
         UI_elements.refreshWeatherLabel.textContent = currentTranslations.refreshWeather;
+    }
+    if (UI_elements.clearFavoritesButton) {
+        UI_elements.clearFavoritesButton.textContent = currentTranslations.clearAll;
+    }
+    if (UI_elements.clearRecentButton) {
+        UI_elements.clearRecentButton.textContent = currentTranslations.clearAll;
     }
     if (UI_elements.dataProvidedBy) {
         UI_elements.dataProvidedBy.textContent = currentTranslations.dataProvidedBy;

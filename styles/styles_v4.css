@@ -507,9 +507,52 @@ input:checked + .slider:before {
     margin: 15px 0 5px;
   }
 
+  .section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .section-heading h3 {
+    margin: 0;
+  }
+
   .btn-small {
     padding: 8px 12px;
     font-size: 0.95rem;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-color);
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.12));
+  }
+
+  .tag-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .tag-action,
+  .tag-remove {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .tag-action {
+    padding: 8px 4px 8px 10px;
+  }
+
+  .tag-remove {
+    padding: 8px 10px;
+    font-weight: 700;
   }
 
   .btn.is-active {

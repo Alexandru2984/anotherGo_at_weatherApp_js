@@ -30,9 +30,9 @@
     />
 
     <!-- Fisierele CSS și JavaScript ale aplicației noastre, cu căile corecte -->
-    <link id="app-theme" rel="stylesheet" href="styles/styles.css?v=20260625-2" />
-    <script src="scripts/theme.js?v=20260625-2"></script>
-    <script type="module" src="scripts/app.js?v=20260625-2" defer></script>
+    <link id="app-theme" rel="stylesheet" href="styles/styles.css?v=20260625-3" />
+    <script src="scripts/theme.js?v=20260625-3"></script>
+    <script type="module" src="scripts/app.js?v=20260625-3" defer></script>
   </head>
   <body>
     <div class="container">
@@ -228,13 +228,25 @@
 
         <!-- Favorite Searches -->
         <section id="favorite-searches" class="card favorite-searches hidden">
-          <h3 data-i18n="favoriteSearchesTitle">Favorite</h3>
+          <div class="section-heading">
+            <h3 data-i18n="favoriteSearchesTitle">Favorite</h3>
+            <button id="clear-favorites" class="btn btn-small btn-ghost" type="button">
+              <i class="fas fa-trash"></i>
+              <span data-i18n="clearAll">Șterge tot</span>
+            </button>
+          </div>
           <ul id="favorite-list" class="tag-list"></ul>
         </section>
 
         <!-- Recent Searches -->
         <section id="recent-searches" class="card recent-searches hidden">
-          <h3 data-i18n="recentSearchesTitle">Căutări Recente</h3>
+          <div class="section-heading">
+            <h3 data-i18n="recentSearchesTitle">Căutări Recente</h3>
+            <button id="clear-recent" class="btn btn-small btn-ghost" type="button">
+              <i class="fas fa-trash"></i>
+              <span data-i18n="clearAll">Șterge tot</span>
+            </button>
+          </div>
           <ul id="recent-list" class="tag-list"></ul>
         </section>
       </main>
