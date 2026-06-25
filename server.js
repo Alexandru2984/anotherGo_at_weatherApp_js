@@ -83,6 +83,11 @@ function sendJson(res, statusCode, payload) {
 
 function getClientIp(req) {
   if (trustProxy) {
+    const realIp = req.headers["x-real-ip"];
+    if (typeof realIp === "string" && realIp.trim()) {
+      return realIp.trim();
+    }
+
     const forwardedFor = req.headers["x-forwarded-for"];
     if (typeof forwardedFor === "string" && forwardedFor.trim()) {
       return forwardedFor.split(",")[0].trim();
