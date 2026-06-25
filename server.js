@@ -8,6 +8,7 @@ const publicRoot = resolve(__dirname);
 const port = Number(process.env.PORT || 3050);
 const openWeatherApiKey = process.env.OPENWEATHER_API_KEY || "";
 const trustProxy = process.env.TRUST_PROXY === "true";
+const appVersion = process.env.APP_VERSION || "dev";
 const requestTimeoutMs = 8000;
 const apiRateWindowMs = 60_000;
 const apiRateLimit = 90;
@@ -24,6 +25,7 @@ const mimeTypes = {
   ".png": "image/png",
   ".svg": "image/svg+xml",
   ".ico": "image/x-icon",
+  ".webmanifest": "application/manifest+json; charset=utf-8",
 };
 
 const securityHeaders = {
@@ -34,6 +36,8 @@ const securityHeaders = {
     "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com",
     "img-src 'self' https://openweathermap.org data:",
     "connect-src 'self'",
+    "worker-src 'self'",
+    "manifest-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -46,6 +50,20 @@ const securityHeaders = {
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
 };
+
+function logRequest(req, statusCode, startedAt) {
+  const durationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+  const logLine = {
+    time: new Date().toISOString(),
+    method: req.method,
+    path: req.url,
+    status: statusCode,
+    duration_ms: Math.round(durationMs),
+    ip: getClientIp(req),
+  };
+
+  console.log(JSON.stringify(logLine));
+}
 
 function setSecurityHeaders(res) {
   for (const [header, value] of Object.entries(securityHeaders)) {
@@ -200,6 +218,20 @@ async function handleOpenWeatherProxy(req, res, reqUrl) {
   }
 }
 
+function handleHealthcheck(req, res) {
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    sendJson(res, 405, { error: "Method not allowed" });
+    return;
+  }
+
+  sendJson(res, 200, {
+    ok: true,
+    version: appVersion,
+    has_openweather_key: Boolean(openWeatherApiKey),
+    uptime_seconds: Math.round(process.uptime()),
+  });
+}
+
 function serveStatic(req, res, reqUrl) {
   if (req.method !== "GET" && req.method !== "HEAD") {
     sendJson(res, 405, { error: "Method not allowed" });
@@ -233,7 +265,7 @@ function serveStatic(req, res, reqUrl) {
   setSecurityHeaders(res);
   res.writeHead(200, {
     "Content-Type": mimeTypes[ext] || "application/octet-stream",
-    "Cache-Control": ext === ".html" ? "no-cache" : "public, max-age=3600",
+    "Cache-Control": ext === ".html" ? "no-cache" : "public, max-age=604800",
   });
 
   if (req.method === "HEAD") {
@@ -244,12 +276,25 @@ function serveStatic(req, res, reqUrl) {
   createReadStream(filePath).pipe(res);
 }
 
-createServer((req, res) => {
+const server = createServer((req, res) => {
+  const startedAt = process.hrtime.bigint();
+  const originalWriteHead = res.writeHead;
+  res.writeHead = function writeHeadWithLogging(statusCode, ...args) {
+    res.statusCode = statusCode;
+    return originalWriteHead.call(this, statusCode, ...args);
+  };
+  res.on("finish", () => logRequest(req, res.statusCode, startedAt));
+
   let reqUrl;
   try {
     reqUrl = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
   } catch {
     sendJson(res, 400, { error: "Bad request" });
+    return;
+  }
+
+  if (reqUrl.pathname === "/healthz") {
+    handleHealthcheck(req, res);
     return;
   }
 
@@ -259,6 +304,18 @@ createServer((req, res) => {
   }
 
   serveStatic(req, res, reqUrl);
-}).listen(port, () => {
+});
+
+server.listen(port, () => {
   console.log(`Weather app listening on http://127.0.0.1:${port}`);
 });
+
+function shutdown(signal) {
+  console.log(`Received ${signal}, closing HTTP server`);
+  server.close(() => {
+    process.exit(0);
+  });
+}
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);

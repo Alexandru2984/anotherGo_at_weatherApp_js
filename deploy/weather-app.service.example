@@ -8,6 +8,7 @@ WorkingDirectory=/home/micu/weather/anotherGo_at_weatherApp_js
 Environment=NODE_ENV=production
 Environment=PORT=3050
 Environment=TRUST_PROXY=true
+Environment=APP_VERSION=1.0.0
 EnvironmentFile=/home/micu/weather/anotherGo_at_weatherApp_js/.env
 ExecStart=/usr/bin/node server.js
 Restart=always
