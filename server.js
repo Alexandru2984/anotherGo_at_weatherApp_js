@@ -15,6 +15,14 @@ const apiRateWindowMs = 60_000;
 const apiRateLimit = 90;
 
 const rateBuckets = new Map();
+const responseCache = new Map();
+const inflightRequests = new Map();
+
+const cacheTtls = {
+  "geo/direct": 24 * 60 * 60 * 1000,
+  weather: 2 * 60 * 1000,
+  forecast: 10 * 60 * 1000,
+};
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -175,6 +183,86 @@ function buildOpenWeatherUrl(reqUrl) {
   return upstream;
 }
 
+function getCacheKey(upstreamUrl) {
+  const cacheUrl = new URL(upstreamUrl);
+  cacheUrl.searchParams.delete("appid");
+  cacheUrl.searchParams.sort();
+  return `${cacheUrl.pathname}?${cacheUrl.searchParams.toString()}`;
+}
+
+function getCacheTtl(reqUrl) {
+  const incomingPath = reqUrl.pathname.replace(/^\/api\/openweather\/?/, "");
+  return cacheTtls[incomingPath] || 60_000;
+}
+
+function getCachedPayload(cacheKey) {
+  const entry = responseCache.get(cacheKey);
+  if (!entry) return null;
+
+  if (Date.now() > entry.expiresAt) {
+    responseCache.delete(cacheKey);
+    return null;
+  }
+
+  return entry.payload;
+}
+
+async function fetchOpenWeatherPayload(upstreamUrl, cacheKey, cacheTtl) {
+  const cachedPayload = getCachedPayload(cacheKey);
+  if (cachedPayload) {
+    return {
+      payload: cachedPayload,
+      status: 200,
+      fromCache: true,
+    };
+  }
+
+  const inflight = inflightRequests.get(cacheKey);
+  if (inflight) {
+    return inflight;
+  }
+
+  const requestPromise = (async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
+
+    try {
+      const upstreamRes = await fetch(upstreamUrl, {
+        signal: controller.signal,
+        headers: {
+          Accept: "application/json",
+        },
+      });
+      const payload = await upstreamRes.text();
+
+      if (upstreamRes.ok) {
+        responseCache.set(cacheKey, {
+          payload,
+          expiresAt: Date.now() + cacheTtl,
+        });
+      }
+
+      return {
+        payload,
+        status: upstreamRes.status,
+        fromCache: false,
+      };
+    } catch (error) {
+      return {
+        payload: JSON.stringify({ error: "Weather service unavailable" }),
+        status: error.name === "AbortError" ? 504 : 502,
+        fromCache: false,
+      };
+    } finally {
+      clearTimeout(timeoutId);
+      inflightRequests.delete(cacheKey);
+    }
+  })();
+
+  inflightRequests.set(cacheKey, requestPromise);
+  return requestPromise;
+}
+
 async function handleOpenWeatherProxy(req, res, reqUrl) {
   if (req.method !== "GET") {
     sendJson(res, 405, { error: "Method not allowed" });
@@ -197,31 +285,17 @@ async function handleOpenWeatherProxy(req, res, reqUrl) {
     return;
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
+  const cacheKey = getCacheKey(upstreamUrl);
+  const cacheTtl = getCacheTtl(reqUrl);
+  const response = await fetchOpenWeatherPayload(upstreamUrl, cacheKey, cacheTtl);
 
-  try {
-    const upstreamRes = await fetch(upstreamUrl, {
-      signal: controller.signal,
-      headers: {
-        Accept: "application/json",
-      },
-    });
-    const payload = await upstreamRes.text();
-
-    setSecurityHeaders(res);
-    res.writeHead(upstreamRes.ok ? 200 : upstreamRes.status, {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": upstreamRes.ok ? "public, max-age=120" : "no-store",
-    });
-    res.end(payload);
-  } catch (error) {
-    sendJson(res, error.name === "AbortError" ? 504 : 502, {
-      error: "Weather service unavailable",
-    });
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  setSecurityHeaders(res);
+  res.writeHead(response.status === 200 ? 200 : response.status, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": response.status === 200 ? `public, max-age=${Math.round(cacheTtl / 1000)}` : "no-store",
+    "X-Weather-Cache": response.fromCache ? "HIT" : "MISS",
+  });
+  res.end(response.payload);
 }
 
 function handleHealthcheck(req, res) {
@@ -234,6 +308,7 @@ function handleHealthcheck(req, res) {
     ok: true,
     version: appVersion,
     has_openweather_key: Boolean(openWeatherApiKey),
+    cache_entries: responseCache.size,
     uptime_seconds: Math.round(process.uptime()),
   });
 }
