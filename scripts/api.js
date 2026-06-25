@@ -112,6 +112,31 @@ import {
   }
   
   /**
+   * Caută sugestii de orașe prin OpenWeatherMap Geocoding API.
+   * @param {string} query - Textul introdus de utilizator.
+   * @returns {Promise<Array<{name: string, country: string, state?: string, lat: number, lon: number}>>}
+   */
+  export async function searchCitySuggestions(query) {
+    const geoUrl = buildOpenWeatherUrl('geo/direct', {
+      q: normalizeCity(query),
+      limit: '5',
+    });
+    const geoData = await fetchJson(geoUrl);
+
+    if (!Array.isArray(geoData)) {
+      return [];
+    }
+
+    return geoData.map((city) => ({
+      name: city.name,
+      country: city.country,
+      state: city.state,
+      lat: city.lat,
+      lon: city.lon,
+    }));
+  }
+
+  /**
    * Extrage date meteo de la OpenWeatherMap API.
    * @param {Object} options - Opțiuni pentru extragerea vremii.
    * @param {string} [options.city] - Numele orașului.

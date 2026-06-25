@@ -13,6 +13,7 @@ Această aplicație meteo intuitivă permite utilizatorilor să obțină informa
 ## Funcționalități
 
 - **Căutare după oraș:** Introduceți numele oricărui oraș pentru a obține date meteo.
+- **Autocomplete orașe:** Sugestii de orașe prin proxy-ul OpenWeatherMap.
 - **Locație curentă:** Utilizați geolocalizarea browserului sau locația bazată pe IP.
 - **Unități de temperatură:** Comutați între Celsius (°C) și Fahrenheit (°F).
 - **Căutări recente:** Salvează și afișează o listă de căutări recente pentru acces rapid.

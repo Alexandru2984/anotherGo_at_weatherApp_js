@@ -29,6 +29,8 @@ const elements = {
   getLocationButton: document.querySelector("#get-location"),
   tempToggle: document.querySelector("#temp-toggle"),
   langSelect: document.querySelector("#lang-select"), // Adaugă referința pentru selectorul de limbă
+  cityInput: document.querySelector("#city-input"),
+  citySuggestions: document.querySelector("#city-suggestions"),
   saveFavoriteButton: document.querySelector("#save-favorite"),
   shareWeatherButton: document.querySelector("#share-weather"),
   refreshWeatherButton: document.querySelector("#refresh-weather"),
@@ -42,6 +44,8 @@ initLanguage(); // Noua funcție de inițializare a limbii
 displayInitialWeather();
 setupEventListeners();
 registerServiceWorker();
+
+let citySuggestionTimer = null;
 
 
 // Declarații de funcții
@@ -261,6 +265,7 @@ function setupEventListeners() {
   elements.saveFavoriteButton.addEventListener("click", toggleCurrentFavorite);
   elements.shareWeatherButton.addEventListener("click", shareCurrentWeather);
   elements.refreshWeatherButton.addEventListener("click", refreshCurrentWeather);
+  elements.cityInput.addEventListener("input", handleCityInput);
   if (elements.langSelect) { // Adaugă listener pentru selectorul de limbă
     elements.langSelect.addEventListener("change", handleLanguageChange);
   }
@@ -276,6 +281,25 @@ function handleWeatherSearch(event) {
   }
 
   displayWeather({ city });
+}
+
+function handleCityInput(event) {
+  const query = normalizeCityInput(event.target.value);
+  window.clearTimeout(citySuggestionTimer);
+
+  if (!elements.citySuggestions || query.length < 3) {
+    ui.updateCitySuggestions([], elements.citySuggestions);
+    return;
+  }
+
+  citySuggestionTimer = window.setTimeout(async () => {
+    try {
+      const suggestions = await api.searchCitySuggestions(query);
+      ui.updateCitySuggestions(suggestions, elements.citySuggestions);
+    } catch {
+      ui.updateCitySuggestions([], elements.citySuggestions);
+    }
+  }, 250);
 }
 
 async function handleLocationRequest() {

@@ -71,15 +71,18 @@
 
           <form action="" id="search-form" class="search-container">
             <input
+              id="city-input"
               type="text"
               name="city"
               class="input"
               minlength="1"
               maxlength="80"
               autocomplete="address-level2"
+              list="city-suggestions"
               placeholder="Introduceți numele orașului"
               data-i18n-placeholder="enterCityName"
             />
+            <datalist id="city-suggestions"></datalist>
             <button class="btn">
               <i class="fas fa-search"></i>
             </button>

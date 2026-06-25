@@ -482,6 +482,21 @@ const UI_elements = {
     });
   }
 
+  export function updateCitySuggestions(suggestions, datalist) {
+    if (!datalist) return;
+
+    datalist.replaceChildren();
+    suggestions.forEach((suggestion) => {
+      const option = document.createElement("option");
+      option.value = [
+        suggestion.name,
+        suggestion.state,
+        suggestion.country,
+      ].filter(Boolean).join(", ");
+      datalist.appendChild(option);
+    });
+  }
+
   export function updateFavoriteCitiesList(cities, clickHandler) {
     const list = UI_elements.favoriteSearchesList;
     if (!list) return;
