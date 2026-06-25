@@ -504,6 +504,29 @@ input:checked + .slider:before {
     gap: 12px;
   }
 
+  .temperature-chart {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--card-bg, #282a36) 92%, var(--primary-color) 8%);
+  }
+
+  .weather-alerts {
+    display: grid;
+    gap: 8px;
+    margin: 16px 0;
+  }
+
+  .weather-alert {
+    margin: 0;
+    padding: 10px 12px;
+    border-left: 4px solid #ff5555;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--card-bg, #282a36) 82%, #ff5555 18%);
+  }
+
   .forecast-card {
     display: grid;
     justify-items: center;

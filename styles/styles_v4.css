@@ -529,6 +529,29 @@ input:checked + .slider:before {
     gap: 12px;
   }
 
+  .temperature-chart {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.12));
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--card-bg, #ffffff) 92%, var(--secondary-color) 8%);
+  }
+
+  .weather-alerts {
+    display: grid;
+    gap: 8px;
+    margin: 16px 0;
+  }
+
+  .weather-alert {
+    margin: 0;
+    padding: 10px 12px;
+    border-left: 4px solid var(--primary-color, #ff4081);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--card-bg, #ffffff) 84%, var(--primary-color, #ff4081) 16%);
+  }
+
   .forecast-card {
     display: grid;
     justify-items: center;

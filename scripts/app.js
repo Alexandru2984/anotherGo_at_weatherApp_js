@@ -20,6 +20,7 @@ let recentSearches = [];
 let favoriteCities = [];
 let currentLanguage = 'ro'; // Adaugă o variabilă pentru limba curentă
 let currentCityName = "";
+let currentWeatherRequest = null;
 
 
 // Cache-ul elementelor DOM
@@ -30,6 +31,7 @@ const elements = {
   langSelect: document.querySelector("#lang-select"), // Adaugă referința pentru selectorul de limbă
   saveFavoriteButton: document.querySelector("#save-favorite"),
   shareWeatherButton: document.querySelector("#share-weather"),
+  refreshWeatherButton: document.querySelector("#refresh-weather"),
 };
 
 // Inițializează aplicația
@@ -218,6 +220,8 @@ async function shareCurrentWeather() {
 }
 
 async function displayWeather({ city, lat, lon }) {
+  currentWeatherRequest = city ? { city: normalizeCityInput(city) } : { lat, lon };
+
   try {
     ui.showLoading();
     ui.hideError();
@@ -256,6 +260,7 @@ function setupEventListeners() {
   elements.tempToggle.addEventListener("change", handleUnitChange);
   elements.saveFavoriteButton.addEventListener("click", toggleCurrentFavorite);
   elements.shareWeatherButton.addEventListener("click", shareCurrentWeather);
+  elements.refreshWeatherButton.addEventListener("click", refreshCurrentWeather);
   if (elements.langSelect) { // Adaugă listener pentru selectorul de limbă
     elements.langSelect.addEventListener("change", handleLanguageChange);
   }
@@ -288,7 +293,16 @@ function handleUnitChange() {
   units = elements.tempToggle.checked ? "imperial" : "metric";
   localStorage.setItem(STORAGE_KEYS.TEMPERATURE_UNIT, units);
   ui.updateTemperatureUnitDisplay(units);
-  displayInitialWeather(); // Re-fetch weather with new units
+  refreshCurrentWeather();
+}
+
+function refreshCurrentWeather() {
+  if (currentWeatherRequest) {
+    displayWeather(currentWeatherRequest);
+    return;
+  }
+
+  displayInitialWeather();
 }
 
 /**

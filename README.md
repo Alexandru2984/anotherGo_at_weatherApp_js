@@ -19,6 +19,9 @@ Această aplicație meteo intuitivă permite utilizatorilor să obțină informa
 - **Favorite locale:** Salvează orașe favorite în browser pentru acces rapid.
 - **Share link:** Copiază un link direct către orașul afișat.
 - **Prognoză pe 5 zile:** Afișează carduri zilnice cu temperatură, umiditate și vânt.
+- **Grafic temperatură:** Vizualizează evoluția temperaturii pentru următoarele intervale.
+- **Alerte meteo locale:** Evidențiază furtună, ploaie, ninsoare, vânt puternic și temperaturi extreme pe baza prognozei.
+- **Refresh rapid:** Reîncarcă datele pentru orașul sau coordonatele curente.
 - **Vizualizare interval de temperatură:** Indicator vizual pentru temperaturile curente față de min/max prognozate.
 - **Detalii meteo complete:** Umiditate, viteza vântului, presiune, răsărit și apus.
 - **Suport i18n:** Schimbare limbă interfață (Română, Engleză).

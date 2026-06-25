@@ -573,6 +573,29 @@
     gap: 12px;
   }
 
+  .temperature-chart {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--input-border, rgba(0, 0, 0, 0.12));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--card-background, #ffffff) 92%, var(--primary-color) 8%);
+  }
+
+  .weather-alerts {
+    display: grid;
+    gap: 8px;
+    margin: 16px 0;
+  }
+
+  .weather-alert {
+    margin: 0;
+    padding: 10px 12px;
+    border-left: 4px solid var(--error-color, #e74c3c);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--card-background, #ffffff) 84%, var(--error-color, #e74c3c) 16%);
+  }
+
   .forecast-card {
     display: grid;
     justify-items: center;

@@ -30,8 +30,11 @@ const UI_elements = {
     favoriteSearchesList: document.querySelector("#favorite-list"),
     forecastSection: document.querySelector("#forecast-section"),
     forecastList: document.querySelector("#forecast-list"),
+    temperatureChart: document.querySelector("#temperature-chart"),
+    weatherAlerts: document.querySelector("#weather-alerts"),
     saveFavoriteButton: document.querySelector("#save-favorite"),
     shareWeatherButton: document.querySelector("#share-weather"),
+    refreshWeatherButton: document.querySelector("#refresh-weather"),
     celsiusLabel: document.querySelector(".unit-toggle > span:first-child"),
 
     // Elemente pentru traduceri statice
@@ -51,6 +54,7 @@ const UI_elements = {
     forecastTitle: document.querySelector("#forecast-section h3"),
     saveFavoriteLabel: document.querySelector("#save-favorite span"),
     copyLinkLabel: document.querySelector("#share-weather span"),
+    refreshWeatherLabel: document.querySelector("#refresh-weather span"),
     dataProvidedBy: document.querySelector(".app-footer [data-i18n='dataProvidedBy']"),
     weatherIconAlt: document.querySelector("#weather-icon"), // Pentru atributul alt
   };
@@ -78,8 +82,15 @@ const UI_elements = {
       saveFavorite: "Favorite",
       removeFavorite: "Favorit salvat",
       copyLink: "Copiază link",
+      refreshWeather: "Actualizează",
       linkCopied: "Linkul a fost copiat.",
       linkCopyError: "Nu am putut copia linkul.",
+      alertThunderstorm: "Risc de furtună în prognoza apropiată.",
+      alertHeavyRain: "Ploaie semnificativă în următoarele ore.",
+      alertSnow: "Ninsoare în prognoza apropiată.",
+      alertHighWind: "Vânt puternic. Verificați condițiile înainte de drum.",
+      alertHeat: "Temperaturi ridicate. Hidratarea este importantă.",
+      alertFreeze: "Temperaturi sub zero. Atenție la gheață.",
       dataProvidedBy: "Date furnizate de",
       // Mesaje de eroare
       dataFetchError: "Nu am putut obține datele meteo. Verificați numele orașului și încercați din nou.",
@@ -109,8 +120,15 @@ const UI_elements = {
       saveFavorite: "Favorite",
       removeFavorite: "Saved favorite",
       copyLink: "Copy link",
+      refreshWeather: "Refresh",
       linkCopied: "Link copied.",
       linkCopyError: "Could not copy the link.",
+      alertThunderstorm: "Thunderstorm risk in the nearby forecast.",
+      alertHeavyRain: "Significant rain in the next hours.",
+      alertSnow: "Snow in the nearby forecast.",
+      alertHighWind: "Strong wind. Check conditions before traveling.",
+      alertHeat: "High temperatures. Hydration matters.",
+      alertFreeze: "Below-freezing temperatures. Watch for ice.",
       dataProvidedBy: "Data provided by",
       // Error messages
       dataFetchError: "Could not fetch weather data. Please check the city name and try again.",
@@ -168,6 +186,7 @@ const UI_elements = {
     UI_elements.recentSearchesSection.classList.add("hidden");
     UI_elements.favoriteSearchesSection.classList.add("hidden");
     UI_elements.forecastSection.classList.add("hidden");
+    UI_elements.weatherAlerts.classList.add("hidden");
     hideError();
   }
   
@@ -248,6 +267,8 @@ const UI_elements = {
     positionPercentage = Math.max(0, Math.min(100, positionPercentage));
   
     UI_elements.tempIndicator.style.left = `${positionPercentage}%`;
+    displayWeatherAlerts(weather, forecast, units);
+    displayTemperatureChart(forecast, units);
     displayForecastCards(forecast, units);
   
     UI_elements.weatherInfo.classList.remove("hidden");
@@ -256,6 +277,114 @@ const UI_elements = {
     if (UI_elements.searchTextInput) { // Verifică dacă elementul există înainte de a încerca să-l setezi
         UI_elements.searchTextInput.value = ''; // Golește câmpul de căutare
     }
+  }
+
+  function getForecastWindow(forecast, maxItems = 8) {
+    if (!forecast || !Array.isArray(forecast.list)) return [];
+    return forecast.list.slice(0, maxItems);
+  }
+
+  function displayWeatherAlerts(weather, forecast, units) {
+    const alertsContainer = UI_elements.weatherAlerts;
+    if (!alertsContainer) return;
+
+    const currentLang = localStorage.getItem('language') || 'ro';
+    const translations = TRANSLATIONS[currentLang] || TRANSLATIONS.ro;
+    const forecastWindow = getForecastWindow(forecast, 8);
+    const weatherCodes = [
+      weather.weather?.[0]?.id,
+      ...forecastWindow.map((item) => item.weather?.[0]?.id),
+    ].filter(Boolean);
+    const windSpeeds = [
+      weather.wind?.speed,
+      ...forecastWindow.map((item) => item.wind?.speed),
+    ].filter((value) => Number.isFinite(value));
+    const temperatures = [
+      weather.main?.temp,
+      ...forecastWindow.map((item) => item.main?.temp),
+    ].filter((value) => Number.isFinite(value));
+
+    const alertKeys = [];
+    if (weatherCodes.some((code) => code >= 200 && code < 300)) alertKeys.push("alertThunderstorm");
+    if (weatherCodes.some((code) => code >= 500 && code < 600)) alertKeys.push("alertHeavyRain");
+    if (weatherCodes.some((code) => code >= 600 && code < 700)) alertKeys.push("alertSnow");
+    if (windSpeeds.some((speed) => speed >= (units === "metric" ? 11 : 25))) alertKeys.push("alertHighWind");
+    if (temperatures.some((temp) => temp >= (units === "metric" ? 32 : 90))) alertKeys.push("alertHeat");
+    if (temperatures.some((temp) => temp <= (units === "metric" ? 0 : 32))) alertKeys.push("alertFreeze");
+
+    alertsContainer.replaceChildren();
+    if (alertKeys.length === 0) {
+      alertsContainer.classList.add("hidden");
+      return;
+    }
+
+    alertKeys.slice(0, 3).forEach((key) => {
+      const alert = document.createElement("p");
+      alert.className = "weather-alert";
+      alert.textContent = translations[key];
+      alertsContainer.appendChild(alert);
+    });
+    alertsContainer.classList.remove("hidden");
+  }
+
+  function displayTemperatureChart(forecast, units) {
+    const canvas = UI_elements.temperatureChart;
+    if (!canvas || !forecast || !Array.isArray(forecast.list)) return;
+
+    const points = forecast.list.slice(0, 8).map((item) => ({
+      temp: item.main.temp,
+      label: formatTime(item.dt, forecast.city?.timezone || 0),
+    }));
+
+    if (points.length < 2) return;
+
+    const ctx = canvas.getContext("2d");
+    const width = canvas.width;
+    const height = canvas.height;
+    const padding = 28;
+    const minTemp = Math.min(...points.map((point) => point.temp));
+    const maxTemp = Math.max(...points.map((point) => point.temp));
+    const tempRange = Math.max(1, maxTemp - minTemp);
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(128, 128, 128, 0.25)";
+    ctx.beginPath();
+    ctx.moveTo(padding, height - padding);
+    ctx.lineTo(width - padding, height - padding);
+    ctx.stroke();
+
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--primary-color").trim() || "#64b5f6";
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.beginPath();
+    points.forEach((point, index) => {
+      const x = padding + (index / (points.length - 1)) * (width - padding * 2);
+      const y = padding + ((maxTemp - point.temp) / tempRange) * (height - padding * 2);
+
+      if (index === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    });
+    ctx.stroke();
+
+    ctx.font = "12px sans-serif";
+    ctx.textAlign = "center";
+    points.forEach((point, index) => {
+      const x = padding + (index / (points.length - 1)) * (width - padding * 2);
+      const y = padding + ((maxTemp - point.temp) / tempRange) * (height - padding * 2);
+
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillText(`${Math.round(point.temp)}°`, x, Math.max(14, y - 8));
+      if (index % 2 === 0) {
+        ctx.fillText(point.label, x, height - 8);
+      }
+    });
+
+    canvas.setAttribute("aria-label", `${points.map((point) => `${point.label}: ${Math.round(point.temp)}°`).join(", ")} ${units === "metric" ? "Celsius" : "Fahrenheit"}`);
   }
 
   function getDailyForecastItems(forecast) {
@@ -455,6 +584,12 @@ const UI_elements = {
     }
     if (UI_elements.copyLinkLabel) {
         UI_elements.copyLinkLabel.textContent = currentTranslations.copyLink;
+    }
+    if (UI_elements.refreshWeatherButton) {
+        UI_elements.refreshWeatherButton.title = currentTranslations.refreshWeather;
+    }
+    if (UI_elements.refreshWeatherLabel) {
+        UI_elements.refreshWeatherLabel.textContent = currentTranslations.refreshWeather;
     }
     if (UI_elements.dataProvidedBy) {
         UI_elements.dataProvidedBy.textContent = currentTranslations.dataProvidedBy;
