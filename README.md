@@ -25,6 +25,7 @@ Această aplicație meteo intuitivă permite utilizatorilor să obțină informa
 - **Teme vizuale:** Light, dark, dark neon, modern light, playful.
 - **Responsive design:** Interfață adaptabilă pentru mobil, tabletă și desktop.
 - **Încărcare din URL:** Ex: `index.html?city=Bucuresti`.
+- **PWA/offline shell:** Aplicația poate fi instalată și păstrează shell-ul în cache pentru încărcare offline.
 
 ---
 
@@ -107,6 +108,9 @@ Pentru VPS, folosiți exemplele din `deploy/`:
 │   └── weather-app.service.example
 ├── server.js
 ├── package.json
+├── manifest.webmanifest
+├── offline.html
+├── sw.js
 └── images/
     └── appScreenshot.jpg
 ```

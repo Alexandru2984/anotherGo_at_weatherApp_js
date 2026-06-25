@@ -39,6 +39,7 @@ initFavoriteCitiesList();
 initLanguage(); // Noua funcție de inițializare a limbii
 displayInitialWeather();
 setupEventListeners();
+registerServiceWorker();
 
 
 // Declarații de funcții
@@ -302,4 +303,16 @@ function handleLanguageChange(event) {
   ui.applyStaticUITranslations(currentLanguage); // Aplică traducerile statice
   ui.updateFavoriteButton(currentCityName, favoriteCities);
   displayInitialWeather(); // Re-fetch weather data (dacă API-ul OpenWeatherMap suportă limba, altfel doar reîmprospătează UI-ul)
+}
+
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator) || window.location.protocol === "file:") {
+    return;
+  }
+
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      // Aplicația rămâne funcțională fără PWA/offline cache.
+    });
+  });
 }
