@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const publicRoot = resolve(__dirname);
 const port = Number(process.env.PORT || 3050);
+const host = process.env.HOST || "127.0.0.1";
 const openWeatherApiKey = process.env.OPENWEATHER_API_KEY || "";
 const trustProxy = process.env.TRUST_PROXY === "true";
 const appVersion = process.env.APP_VERSION || "dev";
@@ -306,8 +307,8 @@ const server = createServer((req, res) => {
   serveStatic(req, res, reqUrl);
 });
 
-server.listen(port, () => {
-  console.log(`Weather app listening on http://127.0.0.1:${port}`);
+server.listen(port, host, () => {
+  console.log(`Weather app listening on http://${host}:${port}`);
 });
 
 function shutdown(signal) {

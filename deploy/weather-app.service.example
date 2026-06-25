@@ -6,6 +6,7 @@ After=network.target
 Type=simple
 WorkingDirectory=/home/micu/weather/anotherGo_at_weatherApp_js
 Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
 Environment=PORT=8105
 Environment=TRUST_PROXY=true
 Environment=APP_VERSION=1.0.0
