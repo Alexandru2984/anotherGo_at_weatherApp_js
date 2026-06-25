@@ -1,4 +1,5 @@
 (function () {
+  const assetVersion = "20260625-2";
   const styles = [
     "styles/styles.css",
     "styles/styles_v1.css",
@@ -10,6 +11,6 @@
   const themeLink = document.querySelector("#app-theme");
 
   if (themeLink) {
-    themeLink.href = selectedStyle;
+    themeLink.href = `${selectedStyle}?v=${assetVersion}`;
   }
 })();
