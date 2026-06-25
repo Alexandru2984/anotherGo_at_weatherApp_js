@@ -67,7 +67,7 @@ Exemplu:
 
 ```env
 OPENWEATHER_API_KEY=cheia_ta_openweathermap
-PORT=3050
+PORT=8105
 TRUST_PROXY=true
 ```
 
@@ -79,7 +79,7 @@ Aplicația include un server Node.js fără dependențe externe. Acesta serveșt
 npm start
 ```
 
-Aplicația va fi disponibilă la `http://127.0.0.1:3050/`.
+Aplicația va fi disponibilă la `http://127.0.0.1:8105/`.
 
 Pentru VPS, folosiți exemplele din `deploy/`:
 
