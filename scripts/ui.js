@@ -44,6 +44,7 @@ const UI_elements = {
     refreshWeatherButton: document.querySelector("#refresh-weather"),
     clearFavoritesButton: document.querySelector("#clear-favorites span"),
     clearRecentButton: document.querySelector("#clear-recent span"),
+    themeSelect: document.querySelector("#theme-select"),
     celsiusLabel: document.querySelector(".unit-toggle > span:first-child"),
 
     // Elemente pentru traduceri statice
@@ -91,6 +92,12 @@ const UI_elements = {
       aqiModerate: "Moderată",
       aqiPoor: "Slabă",
       aqiVeryPoor: "Foarte slabă",
+      themeAuto: "Random",
+      themeDark: "Dark",
+      themeLight: "Light",
+      themeNeon: "Neon",
+      themeModern: "Modern",
+      themePlayful: "Playful",
       forecastTitle: "Prognoză pe 5 zile",
       recentSearchesTitle: "Căutări Recente",
       favoriteSearchesTitle: "Favorite",
@@ -137,6 +144,12 @@ const UI_elements = {
       aqiModerate: "Moderate",
       aqiPoor: "Poor",
       aqiVeryPoor: "Very poor",
+      themeAuto: "Random",
+      themeDark: "Dark",
+      themeLight: "Light",
+      themeNeon: "Neon",
+      themeModern: "Modern",
+      themePlayful: "Playful",
       forecastTitle: "5-day forecast",
       recentSearchesTitle: "Recent Searches",
       favoriteSearchesTitle: "Favorites",
@@ -168,6 +181,39 @@ const UI_elements = {
     ro: 'ro-RO',
     en: 'en-US',
   };
+
+  const ASSET_VERSION = "20260626-1";
+  const THEME_STYLES = {
+    auto: [
+      "styles/styles.css",
+      "styles/styles_v1.css",
+      "styles/styles_v2.css",
+      "styles/styles_v3.css",
+      "styles/styles_v4.css",
+    ],
+    dark: "styles/styles.css",
+    light: "styles/styles_v1.css",
+    neon: "styles/styles_v2.css",
+    modern: "styles/styles_v3.css",
+    playful: "styles/styles_v4.css",
+  };
+
+  export function isKnownTheme(theme) {
+    return Object.prototype.hasOwnProperty.call(THEME_STYLES, theme);
+  }
+
+  export function applyTheme(theme) {
+    const safeTheme = isKnownTheme(theme) ? theme : "auto";
+    const themeSource = THEME_STYLES[safeTheme];
+    const selectedStyle = Array.isArray(themeSource)
+      ? themeSource[Math.floor(Math.random() * themeSource.length)]
+      : themeSource;
+    const themeLink = document.querySelector("#app-theme");
+
+    if (themeLink) {
+      themeLink.href = `${selectedStyle}?v=${ASSET_VERSION}`;
+    }
+  }
   
   /**
    * Afișează un mesaj pe interfața utilizatorului.
@@ -690,6 +736,14 @@ const UI_elements = {
     }
     if (UI_elements.clearRecentButton) {
         UI_elements.clearRecentButton.textContent = currentTranslations.clearAll;
+    }
+    if (UI_elements.themeSelect) {
+        Array.from(UI_elements.themeSelect.options).forEach((option) => {
+            const translationKey = option.dataset.i18n;
+            if (translationKey && currentTranslations[translationKey]) {
+                option.textContent = currentTranslations[translationKey];
+            }
+        });
     }
     if (UI_elements.dataProvidedBy) {
         UI_elements.dataProvidedBy.textContent = currentTranslations.dataProvidedBy;

@@ -443,13 +443,15 @@ input:checked + .slider:before {
 /* Utility classes */
 .hidden { display: none !important; }
 
-.lang-selector {
+  .lang-selector,
+  .theme-selector {
     position: relative;
     display: inline-block;
     min-width: 130px; /* Puțin mai lat pentru un aspect jucăuș */
   }
-  
-  .lang-selector select {
+
+  .lang-selector select,
+  .theme-selector select {
     /* Ascunde săgeata implicită a browserului */
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -469,20 +471,23 @@ input:checked + .slider:before {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Umbră pronunțată, dar subtilă */
     transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
   }
-  
-  .lang-selector select:hover {
+
+  .lang-selector select:hover,
+  .theme-selector select:hover {
     border-color: var(--primary-color); /* Roz vibrant la hover */
     background-color: #fffafc; /* Fundal alb-rozaliu la hover */
     box-shadow: 0 8px 20px rgba(255, 64, 129, 0.25); /* Umbră cu tentă de roz */
   }
-  
-  .lang-selector select:focus {
+
+  .lang-selector select:focus,
+  .theme-selector select:focus {
     border-color: var(--secondary-color); /* Portocaliu accent la focus */
     box-shadow: 0 0 0 4px rgba(255, 171, 0, 0.3); /* Inel de focus portocaliu */
   }
-  
+
   /* Săgeata personalizată Font Awesome */
-  .lang-selector::after {
+  .lang-selector::after,
+  .theme-selector::after {
     content: '\f078'; /* Codul Font Awesome pentru săgeata jos */
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
@@ -494,12 +499,13 @@ input:checked + .slider:before {
     pointer-events: none; /* Permite click-ul să treacă prin săgeată */
     transition: color 0.3s ease;
   }
-  
-  .lang-selector select:hover + .lang-selector::after,
-  .lang-selector select:focus + .lang-selector::after {
+
+  .lang-selector:hover::after,
+  .theme-selector:hover::after,
+  .lang-selector:focus-within::after,
+  .theme-selector:focus-within::after {
     color: var(--primary-color); /* Săgeată roz la hover/focus */
   }
-
   .weather-actions {
     display: flex;
     flex-wrap: wrap;

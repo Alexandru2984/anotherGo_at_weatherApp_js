@@ -7,11 +7,11 @@ import {
   MAX_FAVORITE_CITIES,
   MAX_RECENT_SEARCHES,
   STORAGE_KEYS
-} from './config.js?v=20260626-1'; // Importă constante direct din config.js (în același folder scripts/)
+} from './config.js?v=20260626-2'; // Importă constante direct din config.js (în același folder scripts/)
 
-import * as ui from './ui.js?v=20260626-1';     // Importă întregul modul ui ca obiect
-import * as utils from './utils.js?v=20260626-1'; // Importă întregul modul utils ca obiect
-import * as api from './api.js?v=20260626-1';     // Importă întregul modul api ca obiect
+import * as ui from './ui.js?v=20260626-2';     // Importă întregul modul ui ca obiect
+import * as utils from './utils.js?v=20260626-2'; // Importă întregul modul utils ca obiect
+import * as api from './api.js?v=20260626-2';     // Importă întregul modul api ca obiect
 
 
 // Starea aplicației
@@ -29,6 +29,7 @@ const elements = {
   getLocationButton: document.querySelector("#get-location"),
   tempToggle: document.querySelector("#temp-toggle"),
   langSelect: document.querySelector("#lang-select"), // Adaugă referința pentru selectorul de limbă
+  themeSelect: document.querySelector("#theme-select"),
   cityInput: document.querySelector("#city-input"),
   citySuggestions: document.querySelector("#city-suggestions"),
   saveFavoriteButton: document.querySelector("#save-favorite"),
@@ -43,6 +44,7 @@ initTemperatureUnit();
 initRecentSearchesList();
 initFavoriteCitiesList();
 initLanguage(); // Noua funcție de inițializare a limbii
+initTheme();
 displayInitialWeather();
 setupEventListeners();
 registerServiceWorker();
@@ -121,6 +123,13 @@ function initLanguage() {
   
   // Aplică traducerile statice UI
   ui.applyStaticUITranslations(currentLanguage); 
+}
+
+function initTheme() {
+  const storedTheme = localStorage.getItem(STORAGE_KEYS.THEME) || "auto";
+  if (elements.themeSelect) {
+    elements.themeSelect.value = ui.isKnownTheme(storedTheme) ? storedTheme : "auto";
+  }
 }
 
 /**
@@ -298,6 +307,9 @@ function setupEventListeners() {
   elements.clearFavoritesButton.addEventListener("click", clearFavoriteCities);
   elements.clearRecentButton.addEventListener("click", clearRecentSearches);
   elements.cityInput.addEventListener("input", handleCityInput);
+  if (elements.themeSelect) {
+    elements.themeSelect.addEventListener("change", handleThemeChange);
+  }
   if (elements.langSelect) { // Adaugă listener pentru selectorul de limbă
     elements.langSelect.addEventListener("change", handleLanguageChange);
   }
@@ -373,6 +385,12 @@ function handleLanguageChange(event) {
   ui.applyStaticUITranslations(currentLanguage); // Aplică traducerile statice
   ui.updateFavoriteButton(currentCityName, favoriteCities);
   displayInitialWeather(); // Re-fetch weather data (dacă API-ul OpenWeatherMap suportă limba, altfel doar reîmprospătează UI-ul)
+}
+
+function handleThemeChange(event) {
+  const theme = ui.isKnownTheme(event.target.value) ? event.target.value : "auto";
+  localStorage.setItem(STORAGE_KEYS.THEME, theme);
+  ui.applyTheme(theme);
 }
 
 function registerServiceWorker() {

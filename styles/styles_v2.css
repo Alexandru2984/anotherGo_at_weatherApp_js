@@ -420,13 +420,15 @@ input:checked + .slider:before {
 /* Utility classes */
 .hidden { display: none !important; }
 
-.lang-selector {
+  .lang-selector,
+  .theme-selector {
     position: relative;
     display: inline-block;
     min-width: 120px;
   }
-  
-  .lang-selector select {
+
+  .lang-selector select,
+  .theme-selector select {
     /* Ascunde săgeata implicită a browserului */
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -444,19 +446,22 @@ input:checked + .slider:before {
     box-shadow: 0 2px 8px var(--shadow-color); /* Umbră subtilă */
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
-  
-  .lang-selector select:hover {
+
+  .lang-selector select:hover,
+  .theme-selector select:hover {
     border-color: var(--secondary-color); /* Mov la hover */
     box-shadow: 0 2px 10px rgba(189, 147, 249, 0.4); /* Umbră cu tentă mov */
   }
-  
-  .lang-selector select:focus {
+
+  .lang-selector select:focus,
+  .theme-selector select:focus {
     border-color: var(--primary-color); /* Verde neon la focus */
     box-shadow: 0 0 0 3px rgba(80, 250, 123, 0.5); /* Inel de focus verde neon */
   }
-  
+
   /* Săgeata personalizată Font Awesome */
-  .lang-selector::after {
+  .lang-selector::after,
+  .theme-selector::after {
     content: '\f078'; /* Codul Font Awesome pentru săgeata jos */
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
@@ -468,12 +473,13 @@ input:checked + .slider:before {
     pointer-events: none; /* Permite click-ul să treacă prin săgeată */
     transition: color 0.3s ease;
   }
-  
-  .lang-selector select:hover + .lang-selector::after,
-  .lang-selector select:focus + .lang-selector::after {
+
+  .lang-selector:hover::after,
+  .theme-selector:hover::after,
+  .lang-selector:focus-within::after,
+  .theme-selector:focus-within::after {
     color: var(--secondary-color); /* Săgeată mov la hover/focus */
   }
-
   .weather-actions {
     display: flex;
     flex-wrap: wrap;

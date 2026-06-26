@@ -30,9 +30,9 @@
     />
 
     <!-- Fisierele CSS și JavaScript ale aplicației noastre, cu căile corecte -->
-    <link id="app-theme" rel="stylesheet" href="styles/styles.css?v=20260626-1" />
-    <script src="scripts/theme.js?v=20260626-1"></script>
-    <script type="module" src="scripts/app.js?v=20260626-1" defer></script>
+    <link id="app-theme" rel="stylesheet" href="styles/styles.css?v=20260626-2" />
+    <script src="scripts/theme.js?v=20260626-2"></script>
+    <script type="module" src="scripts/app.js?v=20260626-2" defer></script>
   </head>
   <body>
     <div class="container">
@@ -66,6 +66,17 @@
                     <option value="en">English</option>
                     <!-- Poți adăuga mai multe opțiuni de limbă aici -->
                 </select>
+            </div>
+
+            <div class="theme-selector">
+              <select id="theme-select" aria-label="Select theme">
+                <option value="auto" data-i18n="themeAuto">Random</option>
+                <option value="dark" data-i18n="themeDark">Dark</option>
+                <option value="light" data-i18n="themeLight">Light</option>
+                <option value="neon" data-i18n="themeNeon">Neon</option>
+                <option value="modern" data-i18n="themeModern">Modern</option>
+                <option value="playful" data-i18n="themePlayful">Playful</option>
+              </select>
             </div>
           </div>
 

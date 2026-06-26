@@ -28,6 +28,7 @@ Această aplicație meteo intuitivă permite utilizatorilor să obțină informa
 - **Detalii meteo complete:** Umiditate, viteza vântului, presiune, răsărit și apus.
 - **Suport i18n:** Schimbare limbă interfață (Română, Engleză).
 - **Teme vizuale:** Light, dark, dark neon, modern light, playful.
+- **Selector de temă:** Mod random sau temă salvată local între vizite.
 - **Responsive design:** Interfață adaptabilă pentru mobil, tabletă și desktop.
 - **Încărcare din URL:** Ex: `index.html?city=Bucuresti`.
 - **PWA/offline shell:** Aplicația poate fi instalată și păstrează shell-ul în cache pentru încărcare offline.

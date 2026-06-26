@@ -13,5 +13,6 @@ export const STORAGE_KEYS = {
     TEMPERATURE_UNIT: "temperatureUnit",
     RECENT_SEARCHES: "recentSearches",
     FAVORITE_CITIES: "favoriteCities",
+    THEME: "themePreference",
     LANGUAGE: "language" // Adăugat: Cheie pentru stocarea limbii selectate
 };

@@ -502,13 +502,15 @@
       grid-template-columns: 1fr;
     }
   }
-  .lang-selector {
+  .lang-selector,
+  .theme-selector {
     position: relative;
     display: inline-block;
     min-width: 120px;
   }
-  
-  .lang-selector select {
+
+  .lang-selector select,
+  .theme-selector select {
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
@@ -524,15 +526,18 @@
     box-shadow: var(--shadow); /* Umbră similară cu cardurile */
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
-  
+
   .lang-selector select:hover,
-  .lang-selector select:focus {
+  .theme-selector select:hover,
+  .lang-selector select:focus,
+  .theme-selector select:focus {
     border-color: var(--primary-color); /* Chenar evidențiat cu culoarea primară */
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.3); /* Adaptat la noua culoare primară (#4a90e2) */
   }
-  
+
   /* Săgeata personalizată Font Awesome */
-  .lang-selector::after {
+  .lang-selector::after,
+  .theme-selector::after {
     content: '\f078'; /* Codul Font Awesome pentru săgeata jos */
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
