@@ -570,6 +570,38 @@ input:checked + .slider:before {
     background: color-mix(in srgb, var(--card-bg, #282a36) 82%, #ff5555 18%);
   }
 
+  .air-quality {
+    display: grid;
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .air-quality-meter {
+    position: relative;
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #50fa7b, #cddc39, #ffeb3b, #ff9800, #ff5555);
+  }
+
+  .air-quality-indicator {
+    position: absolute;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--card-bg, #282a36);
+    border-radius: 999px;
+    background: var(--text-color);
+    transform: translate(-50%, -50%);
+  }
+
+  .air-quality-components {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    color: var(--text-color);
+    font-size: 0.88rem;
+  }
+
   .forecast-card {
     display: grid;
     justify-items: center;

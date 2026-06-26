@@ -32,6 +32,13 @@ const UI_elements = {
     forecastList: document.querySelector("#forecast-list"),
     temperatureChart: document.querySelector("#temperature-chart"),
     weatherAlerts: document.querySelector("#weather-alerts"),
+    airQuality: document.querySelector("#air-quality"),
+    airQualityLabel: document.querySelector(".air-quality [data-i18n='airQuality']"),
+    aqiLabel: document.querySelector("#aqi-label"),
+    aqiIndicator: document.querySelector("#aqi-indicator"),
+    pm25: document.querySelector("#pm25"),
+    pm10: document.querySelector("#pm10"),
+    o3: document.querySelector("#o3"),
     saveFavoriteButton: document.querySelector("#save-favorite"),
     shareWeatherButton: document.querySelector("#share-weather"),
     refreshWeatherButton: document.querySelector("#refresh-weather"),
@@ -78,6 +85,12 @@ const UI_elements = {
       pressureUnit: " hPa",
       sunrise: "Răsărit",
       sunset: "Apus",
+      airQuality: "Calitatea aerului",
+      aqiGood: "Bună",
+      aqiFair: "Acceptabilă",
+      aqiModerate: "Moderată",
+      aqiPoor: "Slabă",
+      aqiVeryPoor: "Foarte slabă",
       forecastTitle: "Prognoză pe 5 zile",
       recentSearchesTitle: "Căutări Recente",
       favoriteSearchesTitle: "Favorite",
@@ -118,6 +131,12 @@ const UI_elements = {
       pressureUnit: " hPa",
       sunrise: "Sunrise",
       sunset: "Sunset",
+      airQuality: "Air quality",
+      aqiGood: "Good",
+      aqiFair: "Fair",
+      aqiModerate: "Moderate",
+      aqiPoor: "Poor",
+      aqiVeryPoor: "Very poor",
       forecastTitle: "5-day forecast",
       recentSearchesTitle: "Recent Searches",
       favoriteSearchesTitle: "Favorites",
@@ -193,6 +212,7 @@ const UI_elements = {
     UI_elements.favoriteSearchesSection.classList.add("hidden");
     UI_elements.forecastSection.classList.add("hidden");
     UI_elements.weatherAlerts.classList.add("hidden");
+    UI_elements.airQuality.classList.add("hidden");
     hideError();
   }
   
@@ -233,7 +253,7 @@ const UI_elements = {
    * @param {Object} forecast - Datele prognozei.
    * @param {string} units - Unitățile curente (metric/imperial).
    */
-  export function displayWeatherData(weather, forecast) {
+  export function displayWeatherData(weather, forecast, airQuality) {
     // Asigură-te că UI_elements.tempToggle este disponibil și că este un element valid
     const units = UI_elements.tempToggle && UI_elements.tempToggle.checked ? "imperial" : "metric";
   
@@ -274,6 +294,7 @@ const UI_elements = {
   
     UI_elements.tempIndicator.style.left = `${positionPercentage}%`;
     displayWeatherAlerts(weather, forecast, units);
+    displayAirQualityData(airQuality);
     displayTemperatureChart(forecast, units);
     displayForecastCards(forecast, units);
   
@@ -283,6 +304,34 @@ const UI_elements = {
     if (UI_elements.searchTextInput) { // Verifică dacă elementul există înainte de a încerca să-l setezi
         UI_elements.searchTextInput.value = ''; // Golește câmpul de căutare
     }
+  }
+
+  function getAqiTranslationKey(aqi) {
+    return {
+      1: "aqiGood",
+      2: "aqiFair",
+      3: "aqiModerate",
+      4: "aqiPoor",
+      5: "aqiVeryPoor",
+    }[aqi] || "aqiModerate";
+  }
+
+  function displayAirQualityData(airQuality) {
+    const airQualityItem = airQuality?.list?.[0];
+    if (!UI_elements.airQuality || !airQualityItem) return;
+
+    const currentLang = localStorage.getItem('language') || 'ro';
+    const translations = TRANSLATIONS[currentLang] || TRANSLATIONS.ro;
+    const aqi = Number(airQualityItem.main?.aqi || 0);
+    const components = airQualityItem.components || {};
+
+    UI_elements.aqiLabel.textContent = translations[getAqiTranslationKey(aqi)];
+    UI_elements.aqiIndicator.style.left = `${Math.max(0, Math.min(100, ((aqi || 1) - 1) * 25))}%`;
+    UI_elements.pm25.textContent = `${Math.round(components.pm2_5 || 0)} µg/m³`;
+    UI_elements.pm10.textContent = `${Math.round(components.pm10 || 0)} µg/m³`;
+    UI_elements.o3.textContent = `${Math.round(components.o3 || 0)} µg/m³`;
+    UI_elements.airQuality.dataset.aqi = String(aqi || 0);
+    UI_elements.airQuality.classList.remove("hidden");
   }
 
   function getForecastWindow(forecast, maxItems = 8) {
@@ -605,6 +654,9 @@ const UI_elements = {
     }
     if (UI_elements.sunsetLabel) {
         UI_elements.sunsetLabel.textContent = currentTranslations.sunset;
+    }
+    if (UI_elements.airQualityLabel) {
+        UI_elements.airQualityLabel.textContent = currentTranslations.airQuality;
     }
     if (UI_elements.recentSearchesTitle) {
         UI_elements.recentSearchesTitle.textContent = currentTranslations.recentSearchesTitle;

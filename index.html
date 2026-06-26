@@ -30,9 +30,9 @@
     />
 
     <!-- Fisierele CSS și JavaScript ale aplicației noastre, cu căile corecte -->
-    <link id="app-theme" rel="stylesheet" href="styles/styles.css?v=20260625-3" />
-    <script src="scripts/theme.js?v=20260625-3"></script>
-    <script type="module" src="scripts/app.js?v=20260625-3" defer></script>
+    <link id="app-theme" rel="stylesheet" href="styles/styles.css?v=20260626-1" />
+    <script src="scripts/theme.js?v=20260626-1"></script>
+    <script type="module" src="scripts/app.js?v=20260626-1" defer></script>
   </head>
   <body>
     <div class="container">
@@ -186,6 +186,24 @@
           </div>
 
           <div id="weather-alerts" class="weather-alerts hidden"></div>
+
+          <div id="air-quality" class="air-quality data-panel hidden">
+            <div class="data-row">
+              <i class="fas fa-leaf data-icon"></i>
+              <span class="data-label" data-i18n="airQuality">Calitatea aerului</span>
+              <div class="data-value">
+                <span id="aqi-label"></span>
+              </div>
+            </div>
+            <div class="air-quality-meter" aria-hidden="true">
+              <div id="aqi-indicator" class="air-quality-indicator"></div>
+            </div>
+            <div class="air-quality-components">
+              <span>PM2.5: <strong id="pm25"></strong></span>
+              <span>PM10: <strong id="pm10"></strong></span>
+              <span>O3: <strong id="o3"></strong></span>
+            </div>
+          </div>
 
           <div class="sun-times data-panel">
             <div class="data-row">

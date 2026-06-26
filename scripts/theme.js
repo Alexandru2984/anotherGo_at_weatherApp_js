@@ -1,5 +1,5 @@
 (function () {
-  const assetVersion = "20260625-3";
+  const assetVersion = "20260626-1";
   const styles = [
     "styles/styles.css",
     "styles/styles_v1.css",

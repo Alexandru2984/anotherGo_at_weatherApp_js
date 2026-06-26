@@ -22,6 +22,7 @@ Această aplicație meteo intuitivă permite utilizatorilor să obțină informa
 - **Prognoză pe 5 zile:** Afișează carduri zilnice cu temperatură, umiditate și vânt.
 - **Grafic temperatură:** Vizualizează evoluția temperaturii pentru următoarele intervale.
 - **Alerte meteo locale:** Evidențiază furtună, ploaie, ninsoare, vânt puternic și temperaturi extreme pe baza prognozei.
+- **Calitatea aerului:** Afișează AQI, PM2.5, PM10 și O3 prin OpenWeather Air Pollution API.
 - **Refresh rapid:** Reîncarcă datele pentru orașul sau coordonatele curente.
 - **Vizualizare interval de temperatură:** Indicator vizual pentru temperaturile curente față de min/max prognozate.
 - **Detalii meteo complete:** Umiditate, viteza vântului, presiune, răsărit și apus.

@@ -6,7 +6,7 @@ import {
     OPENWEATHER_PROXY_BASE_URL,
     OPENWEATHER_BASE_URL,
     OPENWEATHER_GEO_URL,
-  } from './config.js?v=20260625-3'; // Importă constantele din config.js (sunt în același folder scripts/)
+  } from './config.js?v=20260626-1'; // Importă constantele din config.js (sunt în același folder scripts/)
 
   const REQUEST_TIMEOUT_MS = 8000;
 
@@ -177,6 +177,23 @@ import {
     });
     return fetchJson(url);
   }
+
+  /**
+   * Extrage date despre calitatea aerului de la OpenWeatherMap Air Pollution API.
+   * @param {Object} options - Opțiuni pentru calitatea aerului.
+   * @param {string} [options.city] - Numele orașului.
+   * @param {number} [options.lat] - Latitudine.
+   * @param {number} [options.lon] - Longitudine.
+   * @returns {Promise<Object>} Datele despre calitatea aerului.
+   */
+  export async function fetchAirQualityData({ city, lat, lon }) {
+    const coordinates = await resolveCoordinates({ city, lat, lon });
+    const url = buildOpenWeatherUrl('air_pollution', {
+      lat: String(coordinates.lat),
+      lon: String(coordinates.lon),
+    });
+    return fetchJson(url);
+  }
   
   /**
    * Extrage atât datele meteo curente, cât și datele prognozei.
@@ -192,8 +209,13 @@ import {
     const coordinates = await resolveCoordinates({ city, lat, lon });
     const weatherPromise = fetchWeatherData({ ...coordinates, units, lang });
     const forecastPromise = fetchForecastData({ ...coordinates, units, lang });
+    const airQualityPromise = fetchAirQualityData(coordinates);
   
-    const [weather, forecast] = await Promise.all([weatherPromise, forecastPromise]);
-    return { weather, forecast };
+    const [weather, forecast, airQuality] = await Promise.all([
+      weatherPromise,
+      forecastPromise,
+      airQualityPromise,
+    ]);
+    return { weather, forecast, airQuality };
   }
   

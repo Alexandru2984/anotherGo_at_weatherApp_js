@@ -22,6 +22,7 @@ const cacheTtls = {
   "geo/direct": 24 * 60 * 60 * 1000,
   weather: 2 * 60 * 1000,
   forecast: 10 * 60 * 1000,
+  air_pollution: 30 * 60 * 1000,
 };
 
 const mimeTypes = {
@@ -162,7 +163,7 @@ function buildOpenWeatherUrl(reqUrl) {
     upstream.pathname = "/geo/1.0/direct";
     upstream.searchParams.set("q", city);
     upstream.searchParams.set("limit", String(limit));
-  } else if (incomingPath === "weather" || incomingPath === "forecast") {
+  } else if (incomingPath === "weather" || incomingPath === "forecast" || incomingPath === "air_pollution") {
     const lat = Number(reqUrl.searchParams.get("lat"));
     const lon = Number(reqUrl.searchParams.get("lon"));
 
@@ -173,8 +174,10 @@ function buildOpenWeatherUrl(reqUrl) {
     upstream.pathname = `/data/2.5/${incomingPath}`;
     upstream.searchParams.set("lat", String(lat));
     upstream.searchParams.set("lon", String(lon));
-    upstream.searchParams.set("units", normalizeUnits(reqUrl.searchParams.get("units")));
-    upstream.searchParams.set("lang", normalizeLanguage(reqUrl.searchParams.get("lang")));
+    if (incomingPath !== "air_pollution") {
+      upstream.searchParams.set("units", normalizeUnits(reqUrl.searchParams.get("units")));
+      upstream.searchParams.set("lang", normalizeLanguage(reqUrl.searchParams.get("lang")));
+    }
   } else {
     return null;
   }
