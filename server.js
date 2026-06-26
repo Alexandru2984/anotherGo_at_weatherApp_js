@@ -25,6 +25,13 @@ const cacheTtls = {
   air_pollution: 30 * 60 * 1000,
 };
 
+const staleTtls = {
+  "geo/direct": 7 * 24 * 60 * 60 * 1000,
+  weather: 30 * 60 * 1000,
+  forecast: 2 * 60 * 60 * 1000,
+  air_pollution: 2 * 60 * 60 * 1000,
+};
+
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -198,11 +205,32 @@ function getCacheTtl(reqUrl) {
   return cacheTtls[incomingPath] || 60_000;
 }
 
+function getStaleTtl(reqUrl) {
+  const incomingPath = reqUrl.pathname.replace(/^\/api\/openweather\/?/, "");
+  return staleTtls[incomingPath] || 30 * 60 * 1000;
+}
+
 function getCachedPayload(cacheKey) {
   const entry = responseCache.get(cacheKey);
   if (!entry) return null;
 
+  if (Date.now() > entry.staleUntil) {
+    responseCache.delete(cacheKey);
+    return null;
+  }
+
   if (Date.now() > entry.expiresAt) {
+    return null;
+  }
+
+  return entry.payload;
+}
+
+function getStalePayload(cacheKey) {
+  const entry = responseCache.get(cacheKey);
+  if (!entry) return null;
+
+  if (Date.now() > entry.staleUntil) {
     responseCache.delete(cacheKey);
     return null;
   }
@@ -210,13 +238,13 @@ function getCachedPayload(cacheKey) {
   return entry.payload;
 }
 
-async function fetchOpenWeatherPayload(upstreamUrl, cacheKey, cacheTtl) {
+async function fetchOpenWeatherPayload(upstreamUrl, cacheKey, cacheTtl, staleTtl) {
   const cachedPayload = getCachedPayload(cacheKey);
   if (cachedPayload) {
     return {
       payload: cachedPayload,
       status: 200,
-      fromCache: true,
+      cacheState: "HIT",
     };
   }
 
@@ -242,19 +270,40 @@ async function fetchOpenWeatherPayload(upstreamUrl, cacheKey, cacheTtl) {
         responseCache.set(cacheKey, {
           payload,
           expiresAt: Date.now() + cacheTtl,
+          staleUntil: Date.now() + cacheTtl + staleTtl,
         });
+      }
+
+      if (!upstreamRes.ok) {
+        const stalePayload = getStalePayload(cacheKey);
+        if (stalePayload) {
+          return {
+            payload: stalePayload,
+            status: 200,
+            cacheState: "STALE",
+          };
+        }
       }
 
       return {
         payload,
         status: upstreamRes.status,
-        fromCache: false,
+        cacheState: "MISS",
       };
     } catch (error) {
+      const stalePayload = getStalePayload(cacheKey);
+      if (stalePayload) {
+        return {
+          payload: stalePayload,
+          status: 200,
+          cacheState: "STALE",
+        };
+      }
+
       return {
         payload: JSON.stringify({ error: "Weather service unavailable" }),
         status: error.name === "AbortError" ? 504 : 502,
-        fromCache: false,
+        cacheState: "MISS",
       };
     } finally {
       clearTimeout(timeoutId);
@@ -290,13 +339,14 @@ async function handleOpenWeatherProxy(req, res, reqUrl) {
 
   const cacheKey = getCacheKey(upstreamUrl);
   const cacheTtl = getCacheTtl(reqUrl);
-  const response = await fetchOpenWeatherPayload(upstreamUrl, cacheKey, cacheTtl);
+  const staleTtl = getStaleTtl(reqUrl);
+  const response = await fetchOpenWeatherPayload(upstreamUrl, cacheKey, cacheTtl, staleTtl);
 
   setSecurityHeaders(res);
   res.writeHead(response.status === 200 ? 200 : response.status, {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": response.status === 200 ? `public, max-age=${Math.round(cacheTtl / 1000)}` : "no-store",
-    "X-Weather-Cache": response.fromCache ? "HIT" : "MISS",
+    "X-Weather-Cache": response.cacheState,
   });
   res.end(response.payload);
 }
