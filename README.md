@@ -83,6 +83,13 @@ npm start
 
 Aplicația va fi disponibilă la `http://127.0.0.1:8105/`.
 
+Pentru verificări rapide după deploy:
+
+```bash
+npm run smoke
+SMOKE_BASE_URL=https://weather.micutu.com npm run smoke
+```
+
 Pentru VPS, folosiți exemplele din `deploy/`:
 
 - `deploy/nginx-weather.example.conf` pentru reverse proxy nginx către Node
