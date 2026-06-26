@@ -14,6 +14,10 @@ const UI_elements = {
     humidity: document.querySelector("#humidity"),
     windSpeed: document.querySelector("#wind-speed"),
     pressure: document.querySelector("#pressure"),
+    visibility: document.querySelector("#visibility"),
+    cloudCover: document.querySelector("#cloud-cover"),
+    windDirection: document.querySelector("#wind-direction"),
+    precipitation: document.querySelector("#precipitation"),
     sunrise: document.querySelector("#sunrise"),
     sunset: document.querySelector("#sunset"),
     tempToggle: document.querySelector("#temp-toggle"),
@@ -57,6 +61,10 @@ const UI_elements = {
     windUnitLabel: document.querySelector(".weather-details [data-i18n='windUnit']"),
     pressureLabel: document.querySelector(".weather-details [data-i18n='pressure']"),
     pressureUnitLabel: document.querySelector(".weather-details [data-i18n='pressureUnit']"),
+    visibilityLabel: document.querySelector(".weather-extra [data-i18n='visibility']"),
+    cloudCoverLabel: document.querySelector(".weather-extra [data-i18n='cloudCover']"),
+    windDirectionLabel: document.querySelector(".weather-extra [data-i18n='windDirection']"),
+    precipitationLabel: document.querySelector(".weather-extra [data-i18n='precipitation']"),
     sunriseLabel: document.querySelector(".sun-times [data-i18n='sunrise']"),
     sunsetLabel: document.querySelector(".sun-times [data-i18n='sunset']"),
     recentSearchesTitle: document.querySelector("#recent-searches h3"),
@@ -84,6 +92,11 @@ const UI_elements = {
       windUnit: " m/s",
       pressure: "Presiune",
       pressureUnit: " hPa",
+      visibility: "Vizibilitate",
+      cloudCover: "Nebulozitate",
+      windDirection: "Direcție vânt",
+      precipitation: "Precipitații",
+      none: "Fără",
       sunrise: "Răsărit",
       sunset: "Apus",
       airQuality: "Calitatea aerului",
@@ -136,6 +149,11 @@ const UI_elements = {
       windUnit: " m/s",
       pressure: "Pressure",
       pressureUnit: " hPa",
+      visibility: "Visibility",
+      cloudCover: "Cloud cover",
+      windDirection: "Wind direction",
+      precipitation: "Precipitation",
+      none: "None",
       sunrise: "Sunrise",
       sunset: "Sunset",
       airQuality: "Air quality",
@@ -316,6 +334,7 @@ const UI_elements = {
       UI_elements.windUnitLabel.textContent = units === 'metric' ? ' m/s' : ' mph';
     }
     UI_elements.pressure.textContent = weather.main.pressure;
+    displayExtraWeatherData(weather, units);
     UI_elements.sunrise.textContent = formatTime(weather.sys.sunrise, weather.timezone);
     UI_elements.sunset.textContent = formatTime(weather.sys.sunset, weather.timezone);
   
@@ -350,6 +369,32 @@ const UI_elements = {
     if (UI_elements.searchTextInput) { // Verifică dacă elementul există înainte de a încerca să-l setezi
         UI_elements.searchTextInput.value = ''; // Golește câmpul de căutare
     }
+  }
+
+  function getWindCompass(degrees) {
+    if (!Number.isFinite(degrees)) return "N/A";
+
+    const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+    const index = Math.round(degrees / 45) % directions.length;
+    return directions[index];
+  }
+
+  function displayExtraWeatherData(weather, units) {
+    const currentLang = localStorage.getItem('language') || 'ro';
+    const translations = TRANSLATIONS[currentLang] || TRANSLATIONS.ro;
+    const visibilityKm = Number.isFinite(weather.visibility)
+      ? (weather.visibility / 1000).toFixed(1)
+      : "N/A";
+    const rain = weather.rain?.["1h"] || 0;
+    const snow = weather.snow?.["1h"] || 0;
+    const precipitation = rain + snow;
+
+    UI_elements.visibility.textContent = `${visibilityKm} km`;
+    UI_elements.cloudCover.textContent = `${weather.clouds?.all ?? 0}%`;
+    UI_elements.windDirection.textContent = `${getWindCompass(weather.wind?.deg)} ${Number.isFinite(weather.wind?.deg) ? `(${weather.wind.deg}°)` : ""}`;
+    UI_elements.precipitation.textContent = precipitation > 0
+      ? `${precipitation.toFixed(1)} mm/h`
+      : translations.none;
   }
 
   function getAqiTranslationKey(aqi) {
@@ -694,6 +739,18 @@ const UI_elements = {
     }
     if (UI_elements.pressureUnitLabel) {
         UI_elements.pressureUnitLabel.textContent = currentTranslations.pressureUnit;
+    }
+    if (UI_elements.visibilityLabel) {
+        UI_elements.visibilityLabel.textContent = currentTranslations.visibility;
+    }
+    if (UI_elements.cloudCoverLabel) {
+        UI_elements.cloudCoverLabel.textContent = currentTranslations.cloudCover;
+    }
+    if (UI_elements.windDirectionLabel) {
+        UI_elements.windDirectionLabel.textContent = currentTranslations.windDirection;
+    }
+    if (UI_elements.precipitationLabel) {
+        UI_elements.precipitationLabel.textContent = currentTranslations.precipitation;
     }
     if (UI_elements.sunriseLabel) {
         UI_elements.sunriseLabel.textContent = currentTranslations.sunrise;

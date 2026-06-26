@@ -1,5 +1,5 @@
 (function () {
-  const assetVersion = "20260626-2";
+  const assetVersion = "20260626-3";
   const themeStorageKey = "themePreference";
   const themes = {
     auto: [

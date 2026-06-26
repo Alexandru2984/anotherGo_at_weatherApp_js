@@ -568,6 +568,10 @@ input:checked + .slider:before {
     margin: 16px 0;
   }
 
+  .weather-extra {
+    margin-top: 16px;
+  }
+
   .weather-alert {
     margin: 0;
     padding: 10px 12px;

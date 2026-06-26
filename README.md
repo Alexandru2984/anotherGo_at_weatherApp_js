@@ -26,6 +26,7 @@ Această aplicație meteo intuitivă permite utilizatorilor să obțină informa
 - **Refresh rapid:** Reîncarcă datele pentru orașul sau coordonatele curente.
 - **Vizualizare interval de temperatură:** Indicator vizual pentru temperaturile curente față de min/max prognozate.
 - **Detalii meteo complete:** Umiditate, viteza vântului, presiune, răsărit și apus.
+- **Detalii extinse:** Vizibilitate, nebulozitate, direcția vântului și precipitații recente.
 - **Suport i18n:** Schimbare limbă interfață (Română, Engleză).
 - **Teme vizuale:** Light, dark, dark neon, modern light, playful.
 - **Selector de temă:** Mod random sau temă salvată local între vizite.

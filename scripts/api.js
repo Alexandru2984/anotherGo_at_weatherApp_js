@@ -6,7 +6,7 @@ import {
     OPENWEATHER_PROXY_BASE_URL,
     OPENWEATHER_BASE_URL,
     OPENWEATHER_GEO_URL,
-  } from './config.js?v=20260626-2'; // Importă constantele din config.js (sunt în același folder scripts/)
+  } from './config.js?v=20260626-3'; // Importă constantele din config.js (sunt în același folder scripts/)
 
   const REQUEST_TIMEOUT_MS = 8000;
 
