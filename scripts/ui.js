@@ -34,6 +34,7 @@ const UI_elements = {
     favoriteSearchesList: document.querySelector("#favorite-list"),
     forecastSection: document.querySelector("#forecast-section"),
     forecastList: document.querySelector("#forecast-list"),
+    hourlyForecast: document.querySelector("#hourly-forecast"),
     temperatureChart: document.querySelector("#temperature-chart"),
     weatherAlerts: document.querySelector("#weather-alerts"),
     airQuality: document.querySelector("#air-quality"),
@@ -112,6 +113,7 @@ const UI_elements = {
       themeModern: "Modern",
       themePlayful: "Playful",
       forecastTitle: "Prognoză pe 5 zile",
+      hourlyForecast: "Prognoză pe ore",
       recentSearchesTitle: "Căutări Recente",
       favoriteSearchesTitle: "Favorite",
       saveFavorite: "Favorite",
@@ -169,6 +171,7 @@ const UI_elements = {
       themeModern: "Modern",
       themePlayful: "Playful",
       forecastTitle: "5-day forecast",
+      hourlyForecast: "Hourly forecast",
       recentSearchesTitle: "Recent Searches",
       favoriteSearchesTitle: "Favorites",
       saveFavorite: "Favorite",
@@ -361,6 +364,7 @@ const UI_elements = {
     displayWeatherAlerts(weather, forecast, units);
     displayAirQualityData(airQuality);
     displayTemperatureChart(forecast, units);
+    displayHourlyForecast(forecast, units);
     displayForecastCards(forecast, units);
   
     UI_elements.weatherInfo.classList.remove("hidden");
@@ -369,6 +373,42 @@ const UI_elements = {
     if (UI_elements.searchTextInput) { // Verifică dacă elementul există înainte de a încerca să-l setezi
         UI_elements.searchTextInput.value = ''; // Golește câmpul de căutare
     }
+  }
+
+  function displayHourlyForecast(forecast, units) {
+    const hourlyForecast = UI_elements.hourlyForecast;
+    if (!hourlyForecast || !forecast || !Array.isArray(forecast.list)) return;
+
+    hourlyForecast.replaceChildren();
+    const currentLang = localStorage.getItem('language') || 'ro';
+    const timezone = forecast.city?.timezone || 0;
+
+    forecast.list.slice(0, 8).forEach((item) => {
+      const card = document.createElement("article");
+      const time = document.createElement("span");
+      const icon = document.createElement("img");
+      const temp = document.createElement("strong");
+      const meta = document.createElement("span");
+
+      card.className = "hourly-card";
+      time.className = "hourly-time";
+      icon.className = "hourly-icon";
+      temp.className = "hourly-temp";
+      meta.className = "hourly-meta";
+
+      time.textContent = formatTime(item.dt, timezone);
+      icon.src = `https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`;
+      icon.alt = item.weather[0].description;
+      icon.loading = "lazy";
+      temp.textContent = `${Math.round(item.main.temp)}°`;
+      meta.textContent = `${Math.round(item.pop * 100)}% · ${item.wind.speed.toFixed(1)}${units === "metric" ? " m/s" : " mph"}`;
+
+      card.append(time, icon, temp, meta);
+      hourlyForecast.appendChild(card);
+    });
+
+    const translations = TRANSLATIONS[currentLang] || TRANSLATIONS.ro;
+    hourlyForecast.setAttribute("aria-label", translations.hourlyForecast);
   }
 
   function getWindCompass(degrees) {

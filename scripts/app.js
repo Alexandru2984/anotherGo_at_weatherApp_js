@@ -7,11 +7,11 @@ import {
   MAX_FAVORITE_CITIES,
   MAX_RECENT_SEARCHES,
   STORAGE_KEYS
-} from './config.js?v=20260626-3'; // Importă constante direct din config.js (în același folder scripts/)
+} from './config.js?v=20260626-4'; // Importă constante direct din config.js (în același folder scripts/)
 
-import * as ui from './ui.js?v=20260626-3';     // Importă întregul modul ui ca obiect
-import * as utils from './utils.js?v=20260626-3'; // Importă întregul modul utils ca obiect
-import * as api from './api.js?v=20260626-3';     // Importă întregul modul api ca obiect
+import * as ui from './ui.js?v=20260626-4';     // Importă întregul modul ui ca obiect
+import * as utils from './utils.js?v=20260626-4'; // Importă întregul modul utils ca obiect
+import * as api from './api.js?v=20260626-4';     // Importă întregul modul api ca obiect
 
 
 // Starea aplicației

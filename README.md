@@ -20,6 +20,7 @@ Această aplicație meteo intuitivă permite utilizatorilor să obțină informa
 - **Favorite locale:** Salvează orașe favorite în browser pentru acces rapid.
 - **Share link:** Copiază un link direct către orașul afișat.
 - **Prognoză pe 5 zile:** Afișează carduri zilnice cu temperatură, umiditate și vânt.
+- **Prognoză pe ore:** Afișează următoarele intervale meteo de 3 ore.
 - **Grafic temperatură:** Vizualizează evoluția temperaturii pentru următoarele intervale.
 - **Alerte meteo locale:** Evidențiază furtună, ploaie, ninsoare, vânt puternic și temperaturi extreme pe baza prognozei.
 - **Calitatea aerului:** Afișează AQI, PM2.5, PM10 și O3 prin OpenWeather Air Pollution API.

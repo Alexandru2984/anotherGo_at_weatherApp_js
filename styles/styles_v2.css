@@ -553,6 +553,37 @@ input:checked + .slider:before {
     gap: 12px;
   }
 
+  .hourly-forecast {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(86px, 1fr);
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .hourly-card {
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    padding: 10px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--card-bg, #282a36) 90%, var(--secondary-color) 10%);
+  }
+
+  .hourly-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .hourly-time,
+  .hourly-meta {
+    color: var(--text-color);
+    font-size: 0.78rem;
+    text-align: center;
+  }
+
   .temperature-chart {
     width: 100%;
     max-width: 100%;
