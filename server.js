@@ -1,6 +1,6 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
-import { extname, join, normalize, resolve } from "node:path";
+import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
@@ -11,8 +11,14 @@ const openWeatherApiKey = process.env.OPENWEATHER_API_KEY || "";
 const trustProxy = process.env.TRUST_PROXY === "true";
 const appVersion = process.env.APP_VERSION || "dev";
 const requestTimeoutMs = 8000;
-const apiRateWindowMs = 60_000;
-const apiRateLimit = 90;
+const apiRateWindowMs = Number(process.env.RATE_WINDOW_MS || 60_000);
+const apiRateLimit = Number(process.env.RATE_LIMIT || 90);
+
+// Hard caps so the in-memory maps can never grow without bound (memory-DoS guard).
+const maxCacheEntries = Number(process.env.MAX_CACHE_ENTRIES || 500);
+const maxRateBuckets = Number(process.env.MAX_RATE_BUCKETS || 20_000);
+const maxUrlLength = 2048;
+const sweepIntervalMs = 60_000;
 
 const rateBuckets = new Map();
 const responseCache = new Map();
@@ -31,6 +37,10 @@ const staleTtls = {
   forecast: 2 * 60 * 60 * 1000,
   air_pollution: 2 * 60 * 60 * 1000,
 };
+
+// Server-side files that live in the project root but must never be served as
+// static assets, even when the static server runs from the repo directory.
+const blockedStaticPaths = /^\/(server\.js|package(-lock)?\.json|scripts\/smoke-test\.js|test\/|tests\/|deploy\/|\.github\/)/;
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -62,6 +72,7 @@ const securityHeaders = {
     "upgrade-insecure-requests",
   ].join("; "),
   "Cross-Origin-Opener-Policy": "same-origin",
+  "Cross-Origin-Resource-Policy": "same-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=(self)",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "X-Content-Type-Options": "nosniff",
@@ -70,10 +81,17 @@ const securityHeaders = {
 
 function logRequest(req, statusCode, startedAt) {
   const durationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+  // Log the pathname only; query strings carry coordinates/city (user location PII).
+  let path = req.url || "/";
+  try {
+    path = new URL(req.url || "/", "http://localhost").pathname;
+  } catch {
+    path = "/";
+  }
   const logLine = {
     time: new Date().toISOString(),
     method: req.method,
-    path: req.url,
+    path,
     status: statusCode,
     duration_ms: Math.round(durationMs),
     ip: getClientIp(req),
@@ -99,6 +117,13 @@ function sendJson(res, statusCode, payload) {
 
 function getClientIp(req) {
   if (trustProxy) {
+    // Behind Cloudflare, the real visitor IP is in CF-Connecting-IP. X-Real-IP /
+    // X-Forwarded-For only hold the Cloudflare edge address, so prefer CF first.
+    const cfIp = req.headers["cf-connecting-ip"];
+    if (typeof cfIp === "string" && cfIp.trim()) {
+      return cfIp.trim();
+    }
+
     const realIp = req.headers["x-real-ip"];
     if (typeof realIp === "string" && realIp.trim()) {
       return realIp.trim();
@@ -119,6 +144,14 @@ function isRateLimited(req) {
   const bucket = rateBuckets.get(ip);
 
   if (!bucket || now > bucket.resetAt) {
+    // Cap the number of tracked IPs; if full, drop the oldest entry first so a
+    // flood of distinct/spoofed addresses cannot exhaust memory.
+    if (rateBuckets.size >= maxRateBuckets && !rateBuckets.has(ip)) {
+      const oldestKey = rateBuckets.keys().next().value;
+      if (oldestKey !== undefined) {
+        rateBuckets.delete(oldestKey);
+      }
+    }
     rateBuckets.set(ip, {
       count: 1,
       resetAt: now + apiRateWindowMs,
@@ -210,6 +243,33 @@ function getStaleTtl(reqUrl) {
   return staleTtls[incomingPath] || 30 * 60 * 1000;
 }
 
+function setCacheEntry(cacheKey, entry) {
+  // Refresh insertion order on update, and cap total entries (FIFO eviction) so
+  // an attacker iterating distinct coordinates cannot grow the cache unbounded.
+  if (responseCache.has(cacheKey)) {
+    responseCache.delete(cacheKey);
+  } else if (responseCache.size >= maxCacheEntries) {
+    const oldestKey = responseCache.keys().next().value;
+    if (oldestKey !== undefined) {
+      responseCache.delete(oldestKey);
+    }
+  }
+  responseCache.set(cacheKey, entry);
+}
+
+function sweepExpired(now = Date.now()) {
+  for (const [key, entry] of responseCache) {
+    if (now > entry.staleUntil) {
+      responseCache.delete(key);
+    }
+  }
+  for (const [ip, bucket] of rateBuckets) {
+    if (now > bucket.resetAt) {
+      rateBuckets.delete(ip);
+    }
+  }
+}
+
 function getCachedPayload(cacheKey) {
   const entry = responseCache.get(cacheKey);
   if (!entry) return null;
@@ -267,7 +327,7 @@ async function fetchOpenWeatherPayload(upstreamUrl, cacheKey, cacheTtl, staleTtl
       const payload = await upstreamRes.text();
 
       if (upstreamRes.ok) {
-        responseCache.set(cacheKey, {
+        setCacheEntry(cacheKey, {
           payload,
           expiresAt: Date.now() + cacheTtl,
           staleUntil: Date.now() + cacheTtl + staleTtl,
@@ -357,11 +417,10 @@ function handleHealthcheck(req, res) {
     return;
   }
 
+  // Keep this minimal: it is unauthenticated. No key presence or cache internals.
   sendJson(res, 200, {
     ok: true,
     version: appVersion,
-    has_openweather_key: Boolean(openWeatherApiKey),
-    cache_entries: responseCache.size,
     uptime_seconds: Math.round(process.uptime()),
   });
 }
@@ -385,7 +444,15 @@ function serveStatic(req, res, reqUrl) {
   const filePath = resolve(join(publicRoot, safePath));
   const relativePath = filePath.slice(publicRoot.length);
 
-  if (!filePath.startsWith(publicRoot) || /(^|[/\\])\.[^/\\]+/.test(relativePath)) {
+  // Use a path-boundary check (publicRoot + separator), not a bare prefix, so a
+  // sibling directory like "<publicRoot>_secret" cannot escape the web root.
+  const withinRoot = filePath === publicRoot || filePath.startsWith(publicRoot + sep);
+  const normalizedRelative = relativePath.split(sep).join("/");
+  if (
+    !withinRoot ||
+    /(^|[/\\])\.[^/\\]+/.test(relativePath) ||
+    blockedStaticPaths.test(normalizedRelative)
+  ) {
     sendJson(res, 403, { error: "Forbidden" });
     return;
   }
@@ -419,6 +486,11 @@ const server = createServer((req, res) => {
   };
   res.on("finish", () => logRequest(req, res.statusCode, startedAt));
 
+  if ((req.url || "").length > maxUrlLength) {
+    sendJson(res, 414, { error: "URI too long" });
+    return;
+  }
+
   let reqUrl;
   try {
     reqUrl = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
@@ -440,9 +512,34 @@ const server = createServer((req, res) => {
   serveStatic(req, res, reqUrl);
 });
 
-server.listen(port, host, () => {
-  console.log(`Weather app listening on http://${host}:${port}`);
+// Reject malformed requests cleanly instead of leaking a stack trace / hanging.
+server.on("clientError", (err, socket) => {
+  if (socket.writable) {
+    socket.end("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
+  }
 });
+
+server.on("error", (error) => {
+  if (error.code === "EADDRINUSE") {
+    console.error(`Port ${port} is already in use; cannot start server.`);
+  } else {
+    console.error("HTTP server error:", error.message);
+  }
+  process.exit(1);
+});
+
+function startServer() {
+  server.listen(port, host, () => {
+    console.log(`Weather app listening on http://${host}:${port}`);
+  });
+
+  // Periodically drop expired cache/rate entries so memory stays bounded even
+  // when traffic is sparse. unref() lets the process exit if nothing else runs.
+  const sweepTimer = setInterval(() => sweepExpired(), sweepIntervalMs);
+  if (typeof sweepTimer.unref === "function") {
+    sweepTimer.unref();
+  }
+}
 
 function shutdown(signal) {
   console.log(`Received ${signal}, closing HTTP server`);
@@ -453,3 +550,24 @@ function shutdown(signal) {
 
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
+
+// Only auto-start when run directly (node server.js); stay importable for tests.
+const invokedDirectly = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (invokedDirectly) {
+  startServer();
+}
+
+export {
+  buildOpenWeatherUrl,
+  getCacheKey,
+  normalizeCity,
+  normalizeUnits,
+  normalizeLanguage,
+  isValidLatitude,
+  isValidLongitude,
+  isRateLimited,
+  setCacheEntry,
+  sweepExpired,
+  responseCache,
+  rateBuckets,
+};
