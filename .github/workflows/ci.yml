@@ -12,13 +12,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js 20
+      - name: Use Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
 
       - name: Syntax check server
         run: node --check server.js
 
+      # Scope to test/ so the network-dependent smoke script (scripts/smoke-test.js,
+      # which the bare `node --test` discovery would match via *-test.js) is excluded.
       - name: Run unit tests
-        run: node --test
+        run: node --test test/*.test.js
