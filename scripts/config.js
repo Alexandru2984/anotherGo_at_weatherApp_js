@@ -14,5 +14,6 @@ export const STORAGE_KEYS = {
     RECENT_SEARCHES: "recentSearches",
     FAVORITE_CITIES: "favoriteCities",
     THEME: "themePreference",
-    LANGUAGE: "language" // Adăugat: Cheie pentru stocarea limbii selectate
+    LANGUAGE: "language", // Adăugat: Cheie pentru stocarea limbii selectate
+    LAST_WEATHER: "lastWeatherSnapshot" // Ultima vreme afișată, pentru offline-first
 };

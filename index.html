@@ -61,7 +61,7 @@
             <div class="unit-toggle">
               <span data-i18n="celsiusSymbol">°C</span>
               <label class="switch">
-                <input type="checkbox" id="temp-toggle" />
+                <input type="checkbox" id="temp-toggle" aria-label="Comută între Celsius și Fahrenheit" />
                 <span class="slider round"></span>
               </label>
               <span data-i18n="fahrenheitSymbol" id="display-unit">°F</span>
@@ -100,23 +100,25 @@
               list="city-suggestions"
               placeholder="Introduceți numele orașului"
               data-i18n-placeholder="enterCityName"
+              aria-label="Introduceți numele orașului"
             />
             <datalist id="city-suggestions"></datalist>
-            <button class="btn">
-              <i class="fas fa-search"></i>
+            <button class="btn" type="submit" aria-label="Caută">
+              <i class="fas fa-search" aria-hidden="true"></i>
             </button>
           </form>
         </section>
 
         <!-- Loading Spinner -->
-        <div id="loading-spinner" class="spinner hidden">
+        <div id="loading-spinner" class="spinner hidden" role="status" aria-live="polite">
           <div class="bounce1"></div>
           <div class="bounce2"></div>
           <div class="bounce3"></div>
+          <span class="sr-only" data-i18n="loading">Se încarcă…</span>
         </div>
 
         <!-- Error Message -->
-        <div id="error-message" class="error-message hidden"></div>
+        <div id="error-message" class="error-message hidden" role="alert" aria-live="assertive"></div>
 
         <!-- Weather Information -->
         <section id="weather-info" class="card weather-info hidden">
@@ -322,5 +324,8 @@
         </p>
       </footer>
     </div>
+
+    <!-- Transient notifications (link copied, etc.) -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
   </body>
 </html>

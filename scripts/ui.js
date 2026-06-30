@@ -4,6 +4,7 @@
 const UI_elements = {
     loadingSpinner: document.querySelector("#loading-spinner"),
     errorMessage: document.querySelector("#error-message"),
+    toast: document.querySelector("#toast"),
     weatherInfo: document.querySelector("#weather-info"),
     cityName: document.querySelector("#city-name"),
     dateTime: document.querySelector("#date-time"),
@@ -55,7 +56,8 @@ const UI_elements = {
     // Elemente pentru traduceri statice
     getGeolocationButton: document.querySelector("#get-location span"),
     getGeolocationButtonTitle: document.querySelector("#get-location"), // Pentru atributul title
-    searchPlaceholder: document.querySelector(".search-container .input"), // Pentru placeholder
+    searchPlaceholder: document.querySelector(".search-container .input"), // Pentru placeholder + aria-label
+    loadingLabel: document.querySelector("#loading-spinner .sr-only"),
     feelsLikeLabel: document.querySelector(".feels-like span:first-child"),
     humidityLabel: document.querySelector(".weather-details [data-i18n='humidity']"),
     windLabel: document.querySelector(".weather-details [data-i18n='wind']"),
@@ -124,6 +126,8 @@ const UI_elements = {
       removeCity: "Șterge orașul",
       linkCopied: "Linkul a fost copiat.",
       linkCopyError: "Nu am putut copia linkul.",
+      loading: "Se încarcă…",
+      offlineDataNote: "Date salvate (ești offline).",
       alertThunderstorm: "Risc de furtună în prognoza apropiată.",
       alertHeavyRain: "Ploaie semnificativă în următoarele ore.",
       alertSnow: "Ninsoare în prognoza apropiată.",
@@ -182,6 +186,8 @@ const UI_elements = {
       removeCity: "Remove city",
       linkCopied: "Link copied.",
       linkCopyError: "Could not copy the link.",
+      loading: "Loading…",
+      offlineDataNote: "Saved data (you are offline).",
       alertThunderstorm: "Thunderstorm risk in the nearby forecast.",
       alertHeavyRain: "Significant rain in the next hours.",
       alertSnow: "Snow in the nearby forecast.",
@@ -241,11 +247,29 @@ const UI_elements = {
     showMessage(messageKey, 'error', currentLang);
   }
   
-  export function showSuccess(message, lang = 'ro') {
-    // Pentru mesaje de succes care nu sunt neapărat din TRANSLATIONS, poți folosi direct stringul.
-    // Dacă vrei să le traduci, va trebui să adaugi chei în TRANSLATIONS.
-    const currentLang = localStorage.getItem('language') || lang;
-    showMessage(message, 'success', currentLang);
+  let toastTimer = null;
+  /**
+   * Afișează o notificare tranzitorie (toast) anunțată de cititoarele de ecran.
+   * @param {string} messageKey - Cheie de traducere sau text direct.
+   * @param {string} type - 'success' | 'error' | '' (neutru).
+   */
+  export function showToast(messageKey, type = 'success') {
+    const toast = UI_elements.toast;
+    if (!toast) return;
+
+    const currentLang = localStorage.getItem('language') || 'ro';
+    const translated = TRANSLATIONS[currentLang]?.[messageKey] || messageKey;
+
+    toast.textContent = translated;
+    toast.className = `toast show ${type}`.trim();
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => {
+      toast.classList.remove('show');
+    }, 3200);
+  }
+
+  export function showSuccess(message) {
+    showToast(message, 'success');
   }
   
   export function hideError() {
@@ -755,6 +779,10 @@ const UI_elements = {
     }
     if (UI_elements.searchPlaceholder) {
         UI_elements.searchPlaceholder.placeholder = currentTranslations.enterCityName;
+        UI_elements.searchPlaceholder.setAttribute("aria-label", currentTranslations.enterCityName);
+    }
+    if (UI_elements.loadingLabel) {
+        UI_elements.loadingLabel.textContent = currentTranslations.loading;
     }
     if (UI_elements.celsiusLabel) {
         UI_elements.celsiusLabel.textContent = currentTranslations.celsiusSymbol;

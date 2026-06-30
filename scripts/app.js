@@ -81,6 +81,45 @@ function readJsonArrayFromStorage(key) {
 }
 
 /**
+ * Offline-first: persist the last successfully rendered weather so it can be
+ * shown instantly on the next visit and used as a fallback when offline.
+ */
+function saveSnapshot(data) {
+  try {
+    localStorage.setItem(
+      STORAGE_KEYS.LAST_WEATHER,
+      JSON.stringify({ data, units, lang: currentLanguage, savedAt: Date.now() })
+    );
+  } catch {
+    // Storage may be full or disabled; offline cache is best-effort.
+  }
+}
+
+function readSnapshot() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.LAST_WEATHER);
+    const snap = raw ? JSON.parse(raw) : null;
+    if (!snap || !snap.data || !snap.data.weather) return null;
+    return snap;
+  } catch {
+    localStorage.removeItem(STORAGE_KEYS.LAST_WEATHER);
+    return null;
+  }
+}
+
+function renderSnapshot(snap) {
+  if (!snap) return false;
+  ui.displayWeatherData(snap.data.weather, snap.data.forecast, snap.data.airQuality);
+  currentCityName = normalizeCityInput(snap.data.weather.name);
+  ui.updateFavoriteButton(currentCityName, favoriteCities);
+  const coord = snap.data.weather.coord;
+  if (coord && Number.isFinite(coord.lat) && Number.isFinite(coord.lon)) {
+    currentWeatherRequest = { lat: coord.lat, lon: coord.lon };
+  }
+  return true;
+}
+
+/**
  * Initialize the temperature unit from localStorage
  */
 function initTemperatureUnit() {
@@ -141,6 +180,13 @@ function initTheme() {
  * 4. Silently fail if all methods fail
  */
 async function displayInitialWeather() {
+  // Offline-first: paint the last saved snapshot immediately (instant UI) when
+  // it matches the active units/language; the flow below then refreshes it.
+  const snapshot = readSnapshot();
+  if (snapshot && snapshot.units === units && snapshot.lang === currentLanguage) {
+    renderSnapshot(snapshot);
+  }
+
   // 0. Try 'city' query parameter from URL
   const urlCity = normalizeCityInput(getUrlParameter('city'));
   if (urlCity) {
@@ -253,9 +299,21 @@ async function shareCurrentWeather() {
   const shareUrl = new URL(window.location.href);
   shareUrl.search = "";
   shareUrl.searchParams.set("city", currentCityName);
+  const url = shareUrl.toString();
+
+  // Prefer the native share sheet (mostly mobile); fall back to clipboard.
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: "Vremea", text: currentCityName, url });
+      return;
+    } catch (error) {
+      if (error && error.name === "AbortError") return; // user dismissed the sheet
+      // otherwise fall through to clipboard
+    }
+  }
 
   try {
-    await navigator.clipboard.writeText(shareUrl.toString());
+    await navigator.clipboard.writeText(url);
     ui.showSuccess("linkCopied");
   } catch {
     ui.showError("linkCopyError");
@@ -282,16 +340,22 @@ async function displayWeather({ city, lat, lon }) {
     currentCityName = normalizeCityInput(data.weather.name);
     ui.updateFavoriteButton(currentCityName, favoriteCities);
     addToRecentSearches(data.weather.name);
+    saveSnapshot(data);
   } catch (error) {
-    let errorMessageKey = "dataFetchError"; // Cheia implicită de eroare
-    if (error.message.includes("Orașul nu a fost găsit") || error.message.includes("City not found")) {
-      errorMessageKey = "cityNotFound";
-    } else if (error.message.includes("HTTP error!") || error.message.includes("Eroare HTTP!")) {
-      errorMessageKey = "dataFetchError"; // Sau o cheie mai specifică dacă ai
-    } else if (error.message.includes("Locația este blocată")) {
-      errorMessageKey = "locationBlocked";
+    // Offline: keep showing the last saved weather instead of a hard error.
+    if (!navigator.onLine && renderSnapshot(readSnapshot())) {
+      ui.showToast("offlineDataNote", "");
+    } else {
+      let errorMessageKey = "dataFetchError"; // Cheia implicită de eroare
+      if (error.message.includes("Orașul nu a fost găsit") || error.message.includes("City not found")) {
+        errorMessageKey = "cityNotFound";
+      } else if (error.message.includes("HTTP error!") || error.message.includes("Eroare HTTP!")) {
+        errorMessageKey = "dataFetchError"; // Sau o cheie mai specifică dacă ai
+      } else if (error.message.includes("Locația este blocată")) {
+        errorMessageKey = "locationBlocked";
+      }
+      ui.showError(errorMessageKey); // Trimite cheia de traducere
     }
-    ui.showError(errorMessageKey); // Trimite cheia de traducere
   } finally {
     ui.hideLoading();
   }
