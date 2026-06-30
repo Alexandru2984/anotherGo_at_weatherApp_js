@@ -529,6 +529,13 @@ server.on("error", (error) => {
 });
 
 function startServer() {
+  if (!openWeatherApiKey) {
+    console.warn(
+      "WARNING: OPENWEATHER_API_KEY is not set. Static files will be served, " +
+        "but /api/openweather/* will return 500 until a key is configured in .env."
+    );
+  }
+
   server.listen(port, host, () => {
     console.log(`Weather app listening on http://${host}:${port}`);
   });

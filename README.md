@@ -153,7 +153,39 @@ Pentru VPS, folosiți exemplele din `deploy/`:
 - Răspunsurile includ headere CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` și `Permissions-Policy`.
 - Scriptul inline pentru tema random a fost mutat în `scripts/theme.js`, ca să funcționeze cu CSP fără `unsafe-inline`.
 - Geolocalizarea pe bază de IP a fost eliminată din fluxul automat pentru a evita trimiterea adresei IP către un serviciu terț fără acțiune explicită.
+- Cache-urile din memorie (răspunsuri + rate limit) au plafon de mărime și sweep periodic, ca să nu poată fi umflate la nesfârșit (protecție memory-DoS).
+- IP-ul real al vizitatorului este preluat din `CF-Connecting-IP` în spatele Cloudflare; vezi `deploy/nginx-cloudflare-realip.example.conf`.
+- Serverul de fișiere statice refuză să servească fișiere server-side (`server.js`, `package.json`, `deploy/`, teste) și fișierele ascunse.
 - Rotiți cheia OpenWeatherMap veche dacă a fost publicată anterior în repository sau deployată în browser.
+
+### ⚠️ Cheie API expusă în istoric — rotire și curățare
+
+Cheia veche a fost commit-ată cândva în `scripts/config.js`, deci există în
+istoricul git (și pe GitHub). Chiar dacă fișierul curent nu o mai conține,
+oricine poate citi commit-urile vechi. Pași recomandați:
+
+1. **Rotește cheia (obligatoriu):** intră pe
+   [OpenWeatherMap → API keys](https://home.openweathermap.org/api_keys),
+   generează o cheie nouă, șterge/dezactiveaz-o pe cea veche, apoi pune cheia
+   nouă în `.env`:
+
+   ```bash
+   nano .env   # OPENWEATHER_API_KEY=cheia_noua
+   sudo systemctl restart weather-app
+   ```
+
+2. **(Opțional) Curăță istoricul git**, ca să nu mai apară cheia în commit-uri:
+
+   ```bash
+   # cu git-filter-repo (recomandat)
+   pip install git-filter-repo
+   git filter-repo --replace-text <(echo '6b2c5016bd4466b4560d915499569169==>REDACTED')
+   git push --force --all      # rescrie istoricul remote
+   ```
+
+   Rescrierea istoricului schimbă hash-urile commit-urilor; coordonează-te cu
+   orice colaborator înainte de force-push. Chiar și după scrub, **rotirea
+   cheii rămâne obligatorie** — cheia veche poate fi deja salvată de terți.
 
 ---
 
