@@ -1,9 +1,14 @@
-const CACHE_NAME = "weather-app-v9";
+const CACHE_NAME = "weather-app-v10";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/offline.html",
   "/manifest.webmanifest",
+  "/favicon.ico",
+  "/icons/icon.svg",
+  "/icons/favicon-32.png",
+  "/icons/icon-192.png",
+  "/icons/apple-touch-icon.png",
   "/scripts/api.js?v=20260626-4",
   "/scripts/app.js?v=20260626-4",
   "/scripts/config.js?v=20260626-4",
