@@ -567,6 +567,7 @@ if (invokedDirectly) {
 export {
   buildOpenWeatherUrl,
   getCacheKey,
+  getClientIp,
   normalizeCity,
   normalizeUnits,
   normalizeLanguage,

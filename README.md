@@ -86,6 +86,14 @@ npm start
 
 Aplicația va fi disponibilă la `http://127.0.0.1:8105/`.
 
+Teste unitare (fără dependențe externe, rulează funcțiile pure din server):
+
+```bash
+npm test
+```
+
+Acestea rulează automat și în CI (GitHub Actions) la fiecare push/PR pe `main`.
+
 Pentru verificări rapide după deploy:
 
 ```bash
