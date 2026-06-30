@@ -1,4 +1,4 @@
-const CACHE_NAME = "weather-app-v10";
+const CACHE_NAME = "weather-app-v11";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -9,18 +9,13 @@ const APP_SHELL = [
   "/icons/favicon-32.png",
   "/icons/icon-192.png",
   "/icons/apple-touch-icon.png",
-  "/scripts/api.js?v=20260626-4",
-  "/scripts/app.js?v=20260626-4",
-  "/scripts/config.js?v=20260626-4",
-  "/scripts/theme.js?v=20260626-4",
-  "/scripts/ui.js?v=20260626-4",
-  "/scripts/utils.js?v=20260626-4",
-  "/styles/styles.css?v=20260626-4",
-  "/styles/styles_v1.css?v=20260626-4",
-  "/styles/styles_v2.css?v=20260626-4",
-  "/styles/styles_v3.css?v=20260626-4",
-  "/styles/styles_v4.css?v=20260626-4",
-  "/images/appScreenshot.jpg",
+  "/scripts/api.js?v=20260630-1",
+  "/scripts/app.js?v=20260630-1",
+  "/scripts/config.js?v=20260630-1",
+  "/scripts/theme.js?v=20260630-1",
+  "/scripts/ui.js?v=20260630-1",
+  "/scripts/utils.js?v=20260630-1",
+  "/styles/styles.css?v=20260630-1",
 ];
 
 self.addEventListener("install", (event) => {

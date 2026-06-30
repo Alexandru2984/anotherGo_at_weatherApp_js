@@ -203,37 +203,17 @@ const UI_elements = {
     en: 'en-US',
   };
 
-  const ASSET_VERSION = "20260626-1";
-  const THEME_STYLES = {
-    auto: [
-      "styles/styles.css",
-      "styles/styles_v1.css",
-      "styles/styles_v2.css",
-      "styles/styles_v3.css",
-      "styles/styles_v4.css",
-    ],
-    dark: "styles/styles.css",
-    light: "styles/styles_v1.css",
-    neon: "styles/styles_v2.css",
-    modern: "styles/styles_v3.css",
-    playful: "styles/styles_v4.css",
-  };
+  // Themes are CSS-variable palettes in a single stylesheet, selected via the
+  // data-theme attribute on <html>. "auto" follows the OS (prefers-color-scheme).
+  const KNOWN_THEMES = ["auto", "dark", "light", "neon", "modern", "playful"];
 
   export function isKnownTheme(theme) {
-    return Object.prototype.hasOwnProperty.call(THEME_STYLES, theme);
+    return KNOWN_THEMES.includes(theme);
   }
 
   export function applyTheme(theme) {
     const safeTheme = isKnownTheme(theme) ? theme : "auto";
-    const themeSource = THEME_STYLES[safeTheme];
-    const selectedStyle = Array.isArray(themeSource)
-      ? themeSource[Math.floor(Math.random() * themeSource.length)]
-      : themeSource;
-    const themeLink = document.querySelector("#app-theme");
-
-    if (themeLink) {
-      themeLink.href = `${selectedStyle}?v=${ASSET_VERSION}`;
-    }
+    document.documentElement.setAttribute("data-theme", safeTheme);
   }
   
   /**
@@ -320,9 +300,32 @@ const UI_elements = {
    * @param {Object} forecast - Datele prognozei.
    * @param {string} units - Unitățile curente (metric/imperial).
    */
+  function setWeatherAmbient(weather) {
+    const body = document.body;
+    if (!body) return;
+    const main = String(weather?.weather?.[0]?.main || "").toLowerCase();
+    const icon = String(weather?.weather?.[0]?.icon || "");
+    const conditionMap = {
+      clear: "clear",
+      clouds: "clouds",
+      rain: "rain",
+      drizzle: "drizzle",
+      thunderstorm: "thunderstorm",
+      snow: "snow",
+      mist: "mist",
+      fog: "fog",
+      haze: "mist",
+      smoke: "mist",
+    };
+    body.dataset.condition = conditionMap[main] || "clouds";
+    body.dataset.daytime = icon.endsWith("n") ? "night" : "day";
+  }
+
   export function displayWeatherData(weather, forecast, airQuality) {
     // Asigură-te că UI_elements.tempToggle este disponibil și că este un element valid
     const units = UI_elements.tempToggle && UI_elements.tempToggle.checked ? "imperial" : "metric";
+
+    setWeatherAmbient(weather);
   
     UI_elements.cityName.textContent = weather.name + ', ' + weather.sys.country;
     UI_elements.dateTime.textContent = formatDateTime(weather.dt, weather.timezone);
