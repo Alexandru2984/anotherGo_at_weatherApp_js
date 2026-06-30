@@ -19,8 +19,11 @@ const UI_elements = {
     cloudCover: document.querySelector("#cloud-cover"),
     windDirection: document.querySelector("#wind-direction"),
     precipitation: document.querySelector("#precipitation"),
+    dewPoint: document.querySelector("#dew-point"),
     sunrise: document.querySelector("#sunrise"),
     sunset: document.querySelector("#sunset"),
+    dayLength: document.querySelector("#day-length"),
+    moonPhase: document.querySelector("#moon-phase"),
     tempToggle: document.querySelector("#temp-toggle"),
     displayUnit: document.querySelector("#display-unit"), // Acesta este span-ul pentru °F
     recentSearchesList: document.querySelector("#recent-list"),
@@ -68,8 +71,11 @@ const UI_elements = {
     cloudCoverLabel: document.querySelector(".weather-extra [data-i18n='cloudCover']"),
     windDirectionLabel: document.querySelector(".weather-extra [data-i18n='windDirection']"),
     precipitationLabel: document.querySelector(".weather-extra [data-i18n='precipitation']"),
+    dewPointLabel: document.querySelector(".weather-extra [data-i18n='dewPoint']"),
     sunriseLabel: document.querySelector(".sun-times [data-i18n='sunrise']"),
     sunsetLabel: document.querySelector(".sun-times [data-i18n='sunset']"),
+    dayLengthLabel: document.querySelector(".sun-times [data-i18n='dayLength']"),
+    moonPhaseLabel: document.querySelector(".sun-times [data-i18n='moonPhase']"),
     recentSearchesTitle: document.querySelector("#recent-searches h3"),
     favoriteSearchesTitle: document.querySelector("#favorite-searches h3"),
     forecastTitle: document.querySelector("#forecast-section h3"),
@@ -100,8 +106,19 @@ const UI_elements = {
       windDirection: "Direcție vânt",
       precipitation: "Precipitații",
       none: "Fără",
+      dewPoint: "Punct de rouă",
       sunrise: "Răsărit",
       sunset: "Apus",
+      dayLength: "Durata zilei",
+      moonPhase: "Faza lunii",
+      moonNew: "Lună nouă",
+      moonWaxingCrescent: "Crai nou crescător",
+      moonFirstQuarter: "Primul pătrar",
+      moonWaxingGibbous: "Lună crescătoare",
+      moonFull: "Lună plină",
+      moonWaningGibbous: "Lună descrescătoare",
+      moonLastQuarter: "Ultimul pătrar",
+      moonWaningCrescent: "Crai nou descrescător",
       airQuality: "Calitatea aerului",
       aqiGood: "Bună",
       aqiFair: "Acceptabilă",
@@ -160,8 +177,19 @@ const UI_elements = {
       windDirection: "Wind direction",
       precipitation: "Precipitation",
       none: "None",
+      dewPoint: "Dew point",
       sunrise: "Sunrise",
       sunset: "Sunset",
+      dayLength: "Day length",
+      moonPhase: "Moon phase",
+      moonNew: "New moon",
+      moonWaxingCrescent: "Waxing crescent",
+      moonFirstQuarter: "First quarter",
+      moonWaxingGibbous: "Waxing gibbous",
+      moonFull: "Full moon",
+      moonWaningGibbous: "Waning gibbous",
+      moonLastQuarter: "Last quarter",
+      moonWaningCrescent: "Waning crescent",
       airQuality: "Air quality",
       aqiGood: "Good",
       aqiFair: "Fair",
@@ -367,7 +395,8 @@ const UI_elements = {
     displayExtraWeatherData(weather, units);
     UI_elements.sunrise.textContent = formatTime(weather.sys.sunrise, weather.timezone);
     UI_elements.sunset.textContent = formatTime(weather.sys.sunset, weather.timezone);
-  
+    displaySunMoon(weather);
+
     // Actualizează vizualizarea intervalului de temperatură
     const minTemp = forecast.list.reduce((min, item) => Math.min(min, item.main.temp_min), Infinity);
     const maxTemp = forecast.list.reduce((max, item) => Math.max(max, item.main.temp_max), -Infinity);
@@ -423,14 +452,23 @@ const UI_elements = {
       temp.className = "hourly-temp";
       meta.className = "hourly-meta";
 
+      const pop = Math.max(0, Math.min(100, Math.round((item.pop || 0) * 100)));
+      const popBar = document.createElement("div");
+      popBar.className = "hourly-pop";
+      popBar.title = `${pop}%`;
+      const popFill = document.createElement("span");
+      popFill.className = "hourly-pop-fill";
+      popFill.style.width = `${pop}%`;
+      popBar.appendChild(popFill);
+
       time.textContent = formatTime(item.dt, timezone);
       icon.src = `https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`;
       icon.alt = item.weather[0].description;
       icon.loading = "lazy";
       temp.textContent = `${Math.round(item.main.temp)}°`;
-      meta.textContent = `${Math.round(item.pop * 100)}% · ${item.wind.speed.toFixed(1)}${units === "metric" ? " m/s" : " mph"}`;
+      meta.textContent = `${pop}% · ${item.wind.speed.toFixed(1)}${units === "metric" ? " m/s" : " mph"}`;
 
-      card.append(time, icon, temp, meta);
+      card.append(time, icon, temp, popBar, meta);
       hourlyForecast.appendChild(card);
     });
 
@@ -462,6 +500,59 @@ const UI_elements = {
     UI_elements.precipitation.textContent = precipitation > 0
       ? `${precipitation.toFixed(1)} mm/h`
       : translations.none;
+
+    if (UI_elements.dewPoint) {
+      const dew = computeDewPoint(weather.main?.temp, weather.main?.humidity, units);
+      UI_elements.dewPoint.textContent = Number.isFinite(dew) ? `${Math.round(dew)}°` : "N/A";
+    }
+  }
+
+  /** Dew point via the Magnus-Tetens approximation (works in °C; converts °F). */
+  function computeDewPoint(temp, humidity, units) {
+    if (!Number.isFinite(temp) || !Number.isFinite(humidity)) return NaN;
+    const tempC = units === "imperial" ? ((temp - 32) * 5) / 9 : temp;
+    const rh = Math.max(1, Math.min(100, humidity)) / 100;
+    const a = 17.625;
+    const b = 243.04;
+    const alpha = Math.log(rh) + (a * tempC) / (b + tempC);
+    const dewC = (b * alpha) / (a - alpha);
+    return units === "imperial" ? (dewC * 9) / 5 + 32 : dewC;
+  }
+
+  /** Moon phase from the synodic cycle anchored at a known new moon (UTC). */
+  function getMoonPhase(date) {
+    const synodic = 29.530588853;
+    const knownNew = Date.UTC(2000, 0, 6, 18, 14, 0) / 1000;
+    const seconds = date.getTime() / 1000;
+    let age = ((seconds - knownNew) / 86400) % synodic;
+    if (age < 0) age += synodic;
+    const frac = age / synodic;
+    const illumination = (1 - Math.cos(2 * Math.PI * frac)) / 2;
+    const idx = Math.floor(frac * 8 + 0.5) % 8;
+    return { idx, illumination, age };
+  }
+
+  function displaySunMoon(weather) {
+    const currentLang = localStorage.getItem('language') || 'ro';
+    const translations = TRANSLATIONS[currentLang] || TRANSLATIONS.ro;
+
+    if (UI_elements.dayLength && Number.isFinite(weather.sys?.sunrise) && Number.isFinite(weather.sys?.sunset)) {
+      const seconds = Math.max(0, weather.sys.sunset - weather.sys.sunrise);
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.round((seconds % 3600) / 60);
+      UI_elements.dayLength.textContent = `${hours}h ${minutes}m`;
+    }
+
+    if (UI_elements.moonPhase) {
+      const moon = getMoonPhase(new Date((weather.dt || Date.now() / 1000) * 1000));
+      const names = [
+        "moonNew", "moonWaxingCrescent", "moonFirstQuarter", "moonWaxingGibbous",
+        "moonFull", "moonWaningGibbous", "moonLastQuarter", "moonWaningCrescent",
+      ];
+      const emojis = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
+      UI_elements.moonPhase.textContent =
+        `${emojis[moon.idx]} ${translations[names[moon.idx]]} · ${Math.round(moon.illumination * 100)}%`;
+    }
   }
 
   function getAqiTranslationKey(aqi) {
@@ -540,6 +631,23 @@ const UI_elements = {
     alertsContainer.classList.remove("hidden");
   }
 
+  function toRgba(color, alpha) {
+    const value = String(color || "").trim();
+    if (value.startsWith("#")) {
+      let hex = value.slice(1);
+      if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("");
+      const int = parseInt(hex, 16);
+      if (Number.isFinite(int)) {
+        return `rgba(${(int >> 16) & 255}, ${(int >> 8) & 255}, ${int & 255}, ${alpha})`;
+      }
+    }
+    if (value.startsWith("rgb")) {
+      const nums = value.replace(/rgba?\(|\)/g, "").split(",").slice(0, 3).join(", ");
+      return `rgba(${nums}, ${alpha})`;
+    }
+    return `rgba(100, 181, 246, ${alpha})`;
+  }
+
   function displayTemperatureChart(forecast, units) {
     const canvas = UI_elements.temperatureChart;
     if (!canvas || !forecast || !Array.isArray(forecast.list)) return;
@@ -558,40 +666,58 @@ const UI_elements = {
     const minTemp = Math.min(...points.map((point) => point.temp));
     const maxTemp = Math.max(...points.map((point) => point.temp));
     const tempRange = Math.max(1, maxTemp - minTemp);
+    const accent = getComputedStyle(document.documentElement).getPropertyValue("--primary-color").trim() || "#64b5f6";
+
+    const xAt = (index) => padding + (index / (points.length - 1)) * (width - padding * 2);
+    const yAt = (temp) => padding + ((maxTemp - temp) / tempRange) * (height - padding * 2);
 
     ctx.clearRect(0, 0, width, height);
-    ctx.lineWidth = 2;
+
+    // baseline
+    ctx.lineWidth = 1;
     ctx.strokeStyle = "rgba(128, 128, 128, 0.25)";
     ctx.beginPath();
     ctx.moveTo(padding, height - padding);
     ctx.lineTo(width - padding, height - padding);
     ctx.stroke();
 
-    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--primary-color").trim() || "#64b5f6";
-    ctx.fillStyle = ctx.strokeStyle;
+    // gradient area fill under the curve
+    const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
+    gradient.addColorStop(0, toRgba(accent, 0.35));
+    gradient.addColorStop(1, toRgba(accent, 0.02));
+    ctx.beginPath();
+    ctx.moveTo(xAt(0), height - padding);
+    points.forEach((point, index) => ctx.lineTo(xAt(index), yAt(point.temp)));
+    ctx.lineTo(xAt(points.length - 1), height - padding);
+    ctx.closePath();
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // line
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = accent;
     ctx.beginPath();
     points.forEach((point, index) => {
-      const x = padding + (index / (points.length - 1)) * (width - padding * 2);
-      const y = padding + ((maxTemp - point.temp) / tempRange) * (height - padding * 2);
-
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
+      const x = xAt(index);
+      const y = yAt(point.temp);
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     });
     ctx.stroke();
 
+    // markers + labels (min/max emphasised)
     ctx.font = "12px sans-serif";
     ctx.textAlign = "center";
+    ctx.fillStyle = accent;
     points.forEach((point, index) => {
-      const x = padding + (index / (points.length - 1)) * (width - padding * 2);
-      const y = padding + ((maxTemp - point.temp) / tempRange) * (height - padding * 2);
-
+      const x = xAt(index);
+      const y = yAt(point.temp);
+      const isExtreme = point.temp === minTemp || point.temp === maxTemp;
       ctx.beginPath();
-      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.arc(x, y, isExtreme ? 4.5 : 3, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillText(`${Math.round(point.temp)}°`, x, Math.max(14, y - 8));
+      ctx.fillText(`${Math.round(point.temp)}°`, x, Math.max(14, y - 9));
       if (index % 2 === 0) {
         ctx.fillText(point.label, x, height - 8);
       }
@@ -823,11 +949,20 @@ const UI_elements = {
     if (UI_elements.precipitationLabel) {
         UI_elements.precipitationLabel.textContent = currentTranslations.precipitation;
     }
+    if (UI_elements.dewPointLabel) {
+        UI_elements.dewPointLabel.textContent = currentTranslations.dewPoint;
+    }
     if (UI_elements.sunriseLabel) {
         UI_elements.sunriseLabel.textContent = currentTranslations.sunrise;
     }
     if (UI_elements.sunsetLabel) {
         UI_elements.sunsetLabel.textContent = currentTranslations.sunset;
+    }
+    if (UI_elements.dayLengthLabel) {
+        UI_elements.dayLengthLabel.textContent = currentTranslations.dayLength;
+    }
+    if (UI_elements.moonPhaseLabel) {
+        UI_elements.moonPhaseLabel.textContent = currentTranslations.moonPhase;
     }
     if (UI_elements.airQualityLabel) {
         UI_elements.airQualityLabel.textContent = currentTranslations.airQuality;
