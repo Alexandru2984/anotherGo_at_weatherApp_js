@@ -1,3 +1,4 @@
+import { storage } from './storage.js?v=20261105-2';
 // scripts/ui.js
 // Acest modul gestionează actualizarea interfeței utilizatorului și traducerile.
 
@@ -125,7 +126,7 @@ const UI_elements = {
       aqiModerate: "Moderată",
       aqiPoor: "Slabă",
       aqiVeryPoor: "Foarte slabă",
-      themeAuto: "Random",
+      themeAuto: "Sistem",
       themeDark: "Dark",
       themeLight: "Light",
       themeNeon: "Neon",
@@ -196,7 +197,7 @@ const UI_elements = {
       aqiModerate: "Moderate",
       aqiPoor: "Poor",
       aqiVeryPoor: "Very poor",
-      themeAuto: "Random",
+      themeAuto: "System",
       themeDark: "Dark",
       themeLight: "Light",
       themeNeon: "Neon",
@@ -262,16 +263,14 @@ const UI_elements = {
     msgElement.textContent = translatedMessage;
     msgElement.className = `error-message ${type}`; // Folosește clasa error-message ca bază
     msgElement.classList.remove('hidden');
-    setTimeout(() => {
-      msgElement.classList.add('hidden');
-    }, 5000); // Ascunde după 5 secunde
+
   }
   
   export function showError(messageKey, lang = 'ro') {
     // Asigură-te că showMessage primește limba corectă.
     // În app.js, vei avea acces la currentLanguage, deci o poți trimite aici.
     // Pentru simplitate, momentan o vom prelua direct din localStorage sau implicit.
-    const currentLang = localStorage.getItem('language') || 'ro';
+    const currentLang = storage.getItem('language') || 'ro';
     showMessage(messageKey, 'error', currentLang);
   }
   
@@ -285,7 +284,7 @@ const UI_elements = {
     const toast = UI_elements.toast;
     if (!toast) return;
 
-    const currentLang = localStorage.getItem('language') || 'ro';
+    const currentLang = storage.getItem('language') || 'ro';
     const translated = TRANSLATIONS[currentLang]?.[messageKey] || messageKey;
 
     toast.textContent = translated;
@@ -305,20 +304,15 @@ const UI_elements = {
   }
   
   export function showLoading() {
-    UI_elements.loadingSpinner.classList.remove("hidden");
-    UI_elements.weatherInfo.classList.add("hidden");
-    UI_elements.recentSearchesSection.classList.add("hidden");
-    UI_elements.favoriteSearchesSection.classList.add("hidden");
-    UI_elements.forecastSection.classList.add("hidden");
-    UI_elements.weatherAlerts.classList.add("hidden");
-    UI_elements.airQuality.classList.add("hidden");
+    UI_elements.loadingSpinner.classList.remove('hidden');
+    document.querySelector('main').setAttribute('aria-busy', 'true');
     hideError();
   }
-  
   export function hideLoading() {
-    UI_elements.loadingSpinner.classList.add("hidden");
+    UI_elements.loadingSpinner.classList.add('hidden');
+    document.querySelector('main').setAttribute('aria-busy', 'false');
   }
-  
+
   /**
    * Actualizează afișajul unității de temperatură.
    * Aceasta va adăuga sau elimina o clasă pentru a indica vizual unitatea activă,
@@ -373,13 +367,14 @@ const UI_elements = {
     body.dataset.daytime = icon.endsWith("n") ? "night" : "day";
   }
 
-  export function displayWeatherData(weather, forecast, airQuality) {
+  export function displayWeatherData(weather, forecast, airQuality, units = "metric") {
     // Asigură-te că UI_elements.tempToggle este disponibil și că este un element valid
-    const units = UI_elements.tempToggle && UI_elements.tempToggle.checked ? "imperial" : "metric";
+    UI_elements.forecastSection.classList.add("hidden");
+    UI_elements.airQuality.classList.add("hidden");
 
     setWeatherAmbient(weather);
   
-    UI_elements.cityName.textContent = weather.name + ', ' + weather.sys.country;
+    UI_elements.cityName.textContent = [weather.name, weather.sys?.country].filter(Boolean).join(', ');
     UI_elements.dateTime.textContent = formatDateTime(weather.dt, weather.timezone);
     UI_elements.temperature.textContent = Math.round(weather.main.temp);
     UI_elements.feelsLike.textContent = Math.round(weather.main.feels_like);
@@ -393,13 +388,13 @@ const UI_elements = {
     }
     UI_elements.pressure.textContent = weather.main.pressure;
     displayExtraWeatherData(weather, units);
-    UI_elements.sunrise.textContent = formatTime(weather.sys.sunrise, weather.timezone);
-    UI_elements.sunset.textContent = formatTime(weather.sys.sunset, weather.timezone);
+    UI_elements.sunrise.textContent = formatTime(weather.sys?.sunrise, weather.timezone);
+    UI_elements.sunset.textContent = formatTime(weather.sys?.sunset, weather.timezone);
     displaySunMoon(weather);
 
     // Actualizează vizualizarea intervalului de temperatură
-    const minTemp = forecast.list.reduce((min, item) => Math.min(min, item.main.temp_min), Infinity);
-    const maxTemp = forecast.list.reduce((max, item) => Math.max(max, item.main.temp_max), -Infinity);
+    const minTemp = (forecast?.list || []).reduce((min, item) => Math.min(min, item.main.temp_min), weather.main.temp);
+    const maxTemp = (forecast?.list || []).reduce((max, item) => Math.max(max, item.main.temp_max), weather.main.temp);
     const currentTemp = weather.main.temp;
   
     UI_elements.tempMinDisplay.textContent = `${Math.round(minTemp)}°`;
@@ -424,8 +419,7 @@ const UI_elements = {
     displayForecastCards(forecast, units);
   
     UI_elements.weatherInfo.classList.remove("hidden");
-    UI_elements.recentSearchesSection.classList.remove("hidden");
-    UI_elements.favoriteSearchesSection.classList.remove("hidden");
+
     if (UI_elements.searchTextInput) { // Verifică dacă elementul există înainte de a încerca să-l setezi
         UI_elements.searchTextInput.value = ''; // Golește câmpul de căutare
     }
@@ -436,7 +430,7 @@ const UI_elements = {
     if (!hourlyForecast || !forecast || !Array.isArray(forecast.list)) return;
 
     hourlyForecast.replaceChildren();
-    const currentLang = localStorage.getItem('language') || 'ro';
+    const currentLang = storage.getItem('language') || 'ro';
     const timezone = forecast.city?.timezone || 0;
 
     forecast.list.slice(0, 8).forEach((item) => {
@@ -485,7 +479,7 @@ const UI_elements = {
   }
 
   function displayExtraWeatherData(weather, units) {
-    const currentLang = localStorage.getItem('language') || 'ro';
+    const currentLang = storage.getItem('language') || 'ro';
     const translations = TRANSLATIONS[currentLang] || TRANSLATIONS.ro;
     const visibilityKm = Number.isFinite(weather.visibility)
       ? (weather.visibility / 1000).toFixed(1)
@@ -533,7 +527,7 @@ const UI_elements = {
   }
 
   function displaySunMoon(weather) {
-    const currentLang = localStorage.getItem('language') || 'ro';
+    const currentLang = storage.getItem('language') || 'ro';
     const translations = TRANSLATIONS[currentLang] || TRANSLATIONS.ro;
 
     if (UI_elements.dayLength && Number.isFinite(weather.sys?.sunrise) && Number.isFinite(weather.sys?.sunset)) {
@@ -569,7 +563,7 @@ const UI_elements = {
     const airQualityItem = airQuality?.list?.[0];
     if (!UI_elements.airQuality || !airQualityItem) return;
 
-    const currentLang = localStorage.getItem('language') || 'ro';
+    const currentLang = storage.getItem('language') || 'ro';
     const translations = TRANSLATIONS[currentLang] || TRANSLATIONS.ro;
     const aqi = Number(airQualityItem.main?.aqi || 0);
     const components = airQualityItem.components || {};
@@ -592,7 +586,7 @@ const UI_elements = {
     const alertsContainer = UI_elements.weatherAlerts;
     if (!alertsContainer) return;
 
-    const currentLang = localStorage.getItem('language') || 'ro';
+    const currentLang = storage.getItem('language') || 'ro';
     const translations = TRANSLATIONS[currentLang] || TRANSLATIONS.ro;
     const forecastWindow = getForecastWindow(forecast, 8);
     const weatherCodes = [
@@ -758,7 +752,7 @@ const UI_elements = {
       return;
     }
 
-    const currentLang = localStorage.getItem('language') || 'ro';
+    const currentLang = storage.getItem('language') || 'ro';
     dailyItems.forEach((item) => {
       const card = document.createElement("article");
       card.className = "forecast-card";
@@ -800,18 +794,18 @@ const UI_elements = {
     const listItem = document.createElement("li");
     const label = document.createElement("button");
     const remove = document.createElement("button");
-    const currentLang = localStorage.getItem('language') || 'ro';
+    const currentLang = storage.getItem('language') || 'ro';
     const translations = TRANSLATIONS[currentLang] || TRANSLATIONS.ro;
 
     label.type = "button";
     label.className = "tag-action";
-    label.textContent = city;
-    label.addEventListener("click", () => clickHandler({ city }));
+    label.textContent = typeof city === "string" ? city : city.label || city.name;
+    label.addEventListener("click", () => clickHandler(typeof city === "string" ? { city } : city));
 
     remove.type = "button";
     remove.className = "tag-remove";
     remove.title = translations.removeCity;
-    remove.setAttribute("aria-label", `${translations.removeCity}: ${city}`);
+    remove.setAttribute("aria-label", `${translations.removeCity}: ${typeof city === "string" ? city : city.label || city.name}`);
     remove.textContent = "×";
     remove.addEventListener("click", (event) => {
       event.stopPropagation();
@@ -880,7 +874,7 @@ const UI_elements = {
   export function updateFavoriteButton(cityName, favoriteCities) {
     if (!UI_elements.saveFavoriteButton || !UI_elements.saveFavoriteLabel) return;
 
-    const currentLang = localStorage.getItem('language') || 'ro';
+    const currentLang = storage.getItem('language') || 'ro';
     const translations = TRANSLATIONS[currentLang] || TRANSLATIONS.ro;
     const isFavorite = favoriteCities.includes(cityName);
 
@@ -894,6 +888,11 @@ const UI_elements = {
    * @param {string} lang - Limba curentă (e.g., 'ro', 'en').
    */
   export function applyStaticUITranslations(lang) {
+    document.documentElement.lang = lang === 'en' ? 'en' : 'ro';
+    document.querySelectorAll('[data-i18n]').forEach(element => {
+      const text = (TRANSLATIONS[lang] || TRANSLATIONS.ro)[element.dataset.i18n];
+      if (text) element.textContent = text;
+    });
     const currentTranslations = TRANSLATIONS[lang] || TRANSLATIONS['ro']; // Fallback la română
   
     // Actualizează textul și atributele elementelor UI
@@ -1025,7 +1024,8 @@ const UI_elements = {
    * @returns {string} Dată și oră formatate.
    */
   function formatDateTime(timestamp, timezoneOffset) {
-    const date = new Date((timestamp + timezoneOffset) * 1000);
+    if (!Number.isFinite(timestamp)) return "—";
+    const date = new Date((timestamp + (timezoneOffset || 0)) * 1000);
     const options = {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
       hour: '2-digit', minute: '2-digit',
@@ -1033,7 +1033,7 @@ const UI_elements = {
     };
     // Folosește UTC pentru a aplica manual deplasarea fusului orar, apoi formatează local
     // Folosește `currentLanguage` pentru localizarea datei/orei
-    const currentLang = localStorage.getItem('language') || 'ro';
+    const currentLang = storage.getItem('language') || 'ro';
     return date.toLocaleString(LOCALES[currentLang] || LOCALES.ro, { timeZone: 'UTC', ...options });
   }
   /**
@@ -1043,13 +1043,56 @@ const UI_elements = {
    * @returns {string} Oră formatată.
    */
   function formatTime(timestamp, timezoneOffset) {
-    const date = new Date((timestamp + timezoneOffset) * 1000);
+    if (!Number.isFinite(timestamp)) return "—";
+    const date = new Date((timestamp + (timezoneOffset || 0)) * 1000);
     const options = {
       hour: '2-digit', minute: '2-digit',
       hourCycle: 'h23', // format 24 de ore
     };
     // Folosește UTC pentru a aplica manual deplasarea fusului orar, apoi formatează local
     // Folosește `currentLanguage` pentru localizarea orei
-    const currentLang = localStorage.getItem('language') || 'ro';
+    const currentLang = storage.getItem('language') || 'ro';
     return date.toLocaleString(LOCALES[currentLang] || LOCALES.ro, { timeZone: 'UTC', ...options });
   }
+
+Object.assign(TRANSLATIONS.ro, {
+  welcomeTitle: 'Vremea, pe înțelesul tău.', welcomeText: 'Caută un oraș și explorează următoarele zile. Locația ta este folosită doar când o ceri.',
+  clearLocalData: 'Șterge datele locale', localDataNote: 'Favoritele și ultima prognoză se păstrează în acest browser.',
+  online: 'Conectat', offline: 'Offline', savedData: 'Date salvate', staleData: 'Date mai vechi · furnizor indisponibil', updated: 'Actualizat',
+  minutesAgo: 'min în urmă', partialData: 'Unele detalii sunt temporar indisponibile.',
+  rateLimited: 'Prea multe cereri. Așteaptă un minut și reîncearcă.', requestTimeout: 'Serviciul meteo răspunde lent. Reîncearcă.',
+  serviceUnavailable: 'Serviciul meteo este temporar indisponibil. Reîncearcă în câteva momente.',
+  invalidLocation: 'Locația este invalidă. Alege din nou orașul.', offlineSearch: 'Ești offline. Poți vedea ultima locație salvată; pentru o căutare nouă ai nevoie de internet.',
+  advisoryNote: 'Indicii calculate din prognoză; nu sunt avertizări meteo oficiale.',
+});
+Object.assign(TRANSLATIONS.en, {
+  welcomeTitle: 'Weather, made clear.', welcomeText: 'Find a city and explore the coming days. Your location is used only when you ask.',
+  clearLocalData: 'Clear local data', localDataNote: 'Favorites and the last forecast are stored in this browser.',
+  online: 'Online', offline: 'Offline', savedData: 'Saved data', staleData: 'Older data · provider unavailable', updated: 'Updated',
+  minutesAgo: 'min ago', partialData: 'Some details are temporarily unavailable.',
+  rateLimited: 'Too many requests. Wait a minute and try again.', requestTimeout: 'The weather service is taking too long. Try again.',
+  serviceUnavailable: 'Weather is temporarily unavailable. Please try again shortly.',
+  invalidLocation: 'Invalid location. Please select the city again.', offlineSearch: 'You are offline. You can view the last saved location; a new search needs internet.',
+  advisoryNote: 'Insights calculated from the forecast; these are not official weather warnings.',
+});
+export function t(key) {
+  return (TRANSLATIONS[storage.getItem('language')] || TRANSLATIONS.ro)[key] || key;
+}
+export function updateConnectionStatus() {
+  const element = document.querySelector('#connection-status');
+  if (element) { element.textContent = t(navigator.onLine ? 'online' : 'offline'); element.dataset.online = String(navigator.onLine); }
+}
+export function updateDataStatus(snapshot, { saved = false, offline = false } = {}) {
+  const element = document.querySelector('#data-status');
+  if (!element) return;
+  const weather = snapshot.data.weather;
+  const fetchedAt = Number.isFinite(weather._cache?.fetchedAt) ? weather._cache.fetchedAt : snapshot.savedAt;
+  const age = Math.max(0, Math.floor((Date.now() - fetchedAt) / 60000));
+  element.textContent = `${t(offline || saved ? 'savedData' : weather._cache?.stale ? 'staleData' : 'updated')} · ${age} ${t('minutesAgo')} · ${snapshot.units === 'imperial' ? '°F' : '°C'}`;
+  element.classList.toggle('is-stale', saved || offline || weather._cache?.stale || age > 15);
+  element.classList.remove('hidden');
+  const partial = document.querySelector('#partial-status');
+  const degraded = !snapshot.data.forecast || !snapshot.data.airQuality?.list?.[0];
+  partial.textContent = degraded ? t('partialData') : '';
+  partial.classList.toggle('hidden', !degraded);
+}

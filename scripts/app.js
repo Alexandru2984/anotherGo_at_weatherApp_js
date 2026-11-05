@@ -1,470 +1,220 @@
-// scripts/app.js
-// Fișierul principal al aplicației meteo, coordonează modulele și gestionează starea.
-// Acest fișier gestionează inițializarea, ascultătorii de evenimente și fluxul aplicației.
+import { DEFAULT_UNIT, MAX_FAVORITE_CITIES, MAX_RECENT_SEARCHES, STORAGE_KEYS } from './config.js?v=20261105-2';
+import { storage, readJson } from './storage.js?v=20261105-2';
+import * as ui from './ui.js?v=20261105-2';
+import { getUserLocation } from './utils.js?v=20261105-2';
+import * as api from './api.js?v=20261105-2';
 
-import {
-  DEFAULT_UNIT,
-  MAX_FAVORITE_CITIES,
-  MAX_RECENT_SEARCHES,
-  STORAGE_KEYS
-} from './config.js?v=20260630-1'; // Importă constante direct din config.js (în același folder scripts/)
-
-import * as ui from './ui.js?v=20260630-1';     // Importă întregul modul ui ca obiect
-import * as utils from './utils.js?v=20260630-1'; // Importă întregul modul utils ca obiect
-import * as api from './api.js?v=20260630-1';     // Importă întregul modul api ca obiect
-
-
-// Starea aplicației
-let units = DEFAULT_UNIT;
-let recentSearches = [];
-let favoriteCities = [];
-let currentLanguage = 'ro'; // Adaugă o variabilă pentru limba curentă
-let currentCityName = "";
-let currentWeatherRequest = null;
-
-
-// Cache-ul elementelor DOM
-const elements = {
-  searchForm: document.querySelector("#search-form"),
-  getLocationButton: document.querySelector("#get-location"),
-  tempToggle: document.querySelector("#temp-toggle"),
-  langSelect: document.querySelector("#lang-select"), // Adaugă referința pentru selectorul de limbă
-  themeSelect: document.querySelector("#theme-select"),
-  cityInput: document.querySelector("#city-input"),
-  citySuggestions: document.querySelector("#city-suggestions"),
-  saveFavoriteButton: document.querySelector("#save-favorite"),
-  shareWeatherButton: document.querySelector("#share-weather"),
-  refreshWeatherButton: document.querySelector("#refresh-weather"),
-  clearFavoritesButton: document.querySelector("#clear-favorites"),
-  clearRecentButton: document.querySelector("#clear-recent"),
-};
-
-// Inițializează aplicația
-initTemperatureUnit();
-initRecentSearchesList();
-initFavoriteCitiesList();
-initLanguage(); // Noua funcție de inițializare a limbii
-initTheme();
-displayInitialWeather();
-setupEventListeners();
-registerServiceWorker();
-
-let citySuggestionTimer = null;
-
-
-// Declarații de funcții
-
-/**
- * Funcție utilitară pentru a prelua un parametru din URL.
- * @param {string} name - Numele parametrului.
- * @returns {string} Valoarea parametrului sau un șir gol dacă nu există.
- */
-function getUrlParameter(name) {
-  return new URLSearchParams(window.location.search).get(name) || "";
+const $ = selector => document.querySelector(selector);
+let units = storage.getItem(STORAGE_KEYS.TEMPERATURE_UNIT) === 'imperial' ? 'imperial' : DEFAULT_UNIT;
+let language = storage.getItem(STORAGE_KEYS.LANGUAGE) === 'en' ? 'en' : 'ro';
+let recent = readLocations(STORAGE_KEYS.RECENT_SEARCHES, MAX_RECENT_SEARCHES);
+let favorites = readLocations(STORAGE_KEYS.FAVORITE_CITIES, MAX_FAVORITE_CITIES);
+let current = null;
+let rendered = null;
+let intent = 0;
+let controller;
+let suggestionController;
+let suggestionTimer;
+let suggestions = [];
+const cleanName = value => String(value || '').normalize('NFC').trim().replace(/\s+/g, ' ').slice(0, 80);
+function readLocations(key, limit) {
+  const value = readJson(key, []);
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, limit).map(item => typeof item === 'string' ? { name: item, label: item } : item).filter(item => item && typeof item.name === 'string' && item.name.length > 0 && item.name.length <= 80 && (item.lat === undefined || api.validCoordinates(item.lat, item.lon))).map(item => ({ name: item.name, country: typeof item.country === "string" ? item.country.slice(0, 2) : undefined, label: typeof item.label === 'string' ? item.label.slice(0, 160) : item.name, ...(api.validCoordinates(item.lat, item.lon) ? { lat: item.lat, lon: item.lon } : {}) }));
 }
-
-function normalizeCityInput(city) {
-  return String(city || "").trim().replace(/\s+/g, " ").slice(0, 80);
+function locationKey(location) {
+  return api.validCoordinates(location?.lat, location?.lon) ? `${location.lat.toFixed(2)},${location.lon.toFixed(2)}` : cleanName(location?.name || location?.city).toLocaleLowerCase();
 }
-
-function readJsonArrayFromStorage(key) {
-  try {
-    const storedValue = localStorage.getItem(key);
-    const parsedValue = storedValue ? JSON.parse(storedValue) : [];
-    return Array.isArray(parsedValue)
-      ? parsedValue.filter((item) => typeof item === "string")
-      : [];
-  } catch {
-    localStorage.removeItem(key);
-    return [];
-  }
+function requestFor(location) {
+  return api.validCoordinates(location.lat, location.lon) ? { lat: location.lat, lon: location.lon, name: location.name, country: location.country } : { city: cleanName(location.city || location.name) };
 }
-
-/**
- * Offline-first: persist the last successfully rendered weather so it can be
- * shown instantly on the next visit and used as a fallback when offline.
- */
-function saveSnapshot(data) {
-  try {
-    localStorage.setItem(
-      STORAGE_KEYS.LAST_WEATHER,
-      JSON.stringify({ data, units, lang: currentLanguage, savedAt: Date.now() })
-    );
-  } catch {
-    // Storage may be full or disabled; offline cache is best-effort.
-  }
+function updateLists() {
+  ui.updateRecentSearchesList(recent, displayWeather, location => { recent = recent.filter(item => locationKey(item) !== locationKey(location)); saveLists(); });
+  ui.updateFavoriteCitiesList(favorites, displayWeather, location => { favorites = favorites.filter(item => locationKey(item) !== locationKey(location)); saveLists(); });
+  const saved = current && favorites.some(item => locationKey(item) === locationKey(current));
+  $('#save-favorite').setAttribute('aria-pressed', String(Boolean(saved)));
+  $('#save-favorite span').textContent = ui.t(saved ? 'removeFavorite' : 'saveFavorite');
 }
-
-function readSnapshot() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.LAST_WEATHER);
-    const snap = raw ? JSON.parse(raw) : null;
-    if (!snap || !snap.data || !snap.data.weather) return null;
-    return snap;
-  } catch {
-    localStorage.removeItem(STORAGE_KEYS.LAST_WEATHER);
-    return null;
-  }
+function saveLists() {
+  storage.setItem(STORAGE_KEYS.RECENT_SEARCHES, JSON.stringify(recent));
+  storage.setItem(STORAGE_KEYS.FAVORITE_CITIES, JSON.stringify(favorites));
+  updateLists();
 }
-
-function renderSnapshot(snap) {
-  if (!snap) return false;
-  ui.displayWeatherData(snap.data.weather, snap.data.forecast, snap.data.airQuality);
-  currentCityName = normalizeCityInput(snap.data.weather.name);
-  ui.updateFavoriteButton(currentCityName, favoriteCities);
-  const coord = snap.data.weather.coord;
-  if (coord && Number.isFinite(coord.lat) && Number.isFinite(coord.lon)) {
-    currentWeatherRequest = { lat: coord.lat, lon: coord.lon };
-  }
-  return true;
-}
-
-/**
- * Initialize the temperature unit from localStorage
- */
-function initTemperatureUnit() {
-  const storedUnit = localStorage.getItem(STORAGE_KEYS.TEMPERATURE_UNIT);
-  units = storedUnit || DEFAULT_UNIT;
-  elements.tempToggle.checked = units === "imperial";
+function applyPreferences() {
+  $('#temp-toggle').checked = units === 'imperial';
+  $('#lang-select').value = language;
+  storage.setItem(STORAGE_KEYS.LANGUAGE, language);
+  ui.applyStaticUITranslations(language);
   ui.updateTemperatureUnitDisplay(units);
+  updateLists();
 }
-
-/**
- * Initialize the recent searches list from localStorage
- */
-function initRecentSearchesList() {
-  recentSearches = readJsonArrayFromStorage(STORAGE_KEYS.RECENT_SEARCHES)
-    .slice(0, MAX_RECENT_SEARCHES);
-  ui.updateRecentSearchesList(recentSearches, displayWeather, removeRecentSearch);
+function readSnapshot() {
+  const snapshot = readJson(STORAGE_KEYS.LAST_WEATHER);
+  if (!snapshot || !api.validWeather(snapshot.data?.weather) || (snapshot.data.forecast !== null && !api.validForecast(snapshot.data.forecast)) || !['metric', 'imperial'].includes(snapshot.units) || !['ro', 'en'].includes(snapshot.language) || !Number.isFinite(snapshot.savedAt) || snapshot.savedAt > Date.now() + 300_000 || Date.now() - snapshot.savedAt > 86_400_000) return null;
+  return snapshot;
 }
-
-/**
- * Initialize the favorite city list from localStorage
- */
-function initFavoriteCitiesList() {
-  favoriteCities = readJsonArrayFromStorage(STORAGE_KEYS.FAVORITE_CITIES)
-    .slice(0, MAX_FAVORITE_CITIES);
-  ui.updateFavoriteCitiesList(favoriteCities, displayWeather, removeFavoriteCity);
+function snapshotMatches(snapshot, location) {
+  if (!snapshot || snapshot.units !== units || snapshot.language !== language) return false;
+  if (!location) return true;
+  const weather = snapshot.data.weather;
+  if (api.validCoordinates(location.lat, location.lon)) return Math.abs(weather.coord.lat - location.lat) < 0.02 && Math.abs(weather.coord.lon - location.lon) < 0.02;
+  return cleanName(weather.name).toLocaleLowerCase() === cleanName(location.city || location.name).toLocaleLowerCase();
 }
-
-/**
- * Initialize the language from localStorage or default.
- * Also applies static UI translations based on the selected language.
- */
-function initLanguage() {
-  const storedLang = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
-  currentLanguage = storedLang || 'ro'; // Setează limba implicită la română
-
-  // Setează valoarea selectorului de limbă dacă există
-  if (elements.langSelect) {
-    elements.langSelect.value = currentLanguage;
-  }
-  
-  // Aplică traducerile statice UI
-  ui.applyStaticUITranslations(currentLanguage); 
+function render(snapshot, saved = false) {
+  rendered = snapshot;
+  const weather = snapshot.data.weather;
+  current = { name: weather.name, label: [weather.name, weather.sys?.country].filter(Boolean).join(', '), country: weather.sys?.country, lat: weather.coord.lat, lon: weather.coord.lon };
+  ui.displayWeatherData(weather, snapshot.data.forecast, snapshot.data.airQuality, snapshot.units);
+  ui.updateDataStatus(snapshot, { saved, offline: !navigator.onLine });
+  $('#welcome').classList.add('hidden');
+  updateLists();
 }
-
-function initTheme() {
-  const storedTheme = localStorage.getItem(STORAGE_KEYS.THEME) || "auto";
-  if (elements.themeSelect) {
-    elements.themeSelect.value = ui.isKnownTheme(storedTheme) ? storedTheme : "auto";
-  }
-}
-
-/**
- * Get initial weather data using a fallback strategy:
- * 0. Try 'city' query parameter from URL
- * 1. Try recent searches first
- * 2. Try browser geolocation API
- * 3. Try IP-based geolocation
- * 4. Silently fail if all methods fail
- */
-async function displayInitialWeather() {
-  // Offline-first: paint the last saved snapshot immediately (instant UI) when
-  // it matches the active units/language; the flow below then refreshes it.
-  const snapshot = readSnapshot();
-  if (snapshot && snapshot.units === units && snapshot.lang === currentLanguage) {
-    renderSnapshot(snapshot);
-  }
-
-  // 0. Try 'city' query parameter from URL
-  const urlCity = normalizeCityInput(getUrlParameter('city'));
-  if (urlCity) {
-    displayWeather({ city: urlCity });
-    return;
-  }
-
-  // 1. Try to use recent searches if available
-  if (recentSearches.length > 0) {
-    const city = recentSearches[0];
-    displayWeather({ city });
-    return;
-  }
-
-  // 2. Try browser geolocation
+async function displayWeather(location) {
+  const sequence = ++intent;
+  controller?.abort();
+  controller = new AbortController();
+  const requestedUnits = units;
+  const requestedLanguage = language;
+  ui.showLoading();
   try {
-    const { lat, lon } = await utils.getUserLocation();
-    displayWeather({ lat, lon });
-    return;
+    const data = await api.fetchWeatherAndForecast({ ...requestFor(location), units: requestedUnits, lang: requestedLanguage, signal: controller.signal });
+    if (sequence !== intent) return;
+    const snapshot = { data, units: requestedUnits, language: requestedLanguage, savedAt: Date.now() };
+    render(snapshot);
+    recent = [current, ...recent.filter(item => locationKey(item) !== locationKey(current))].slice(0, MAX_RECENT_SEARCHES);
+    saveLists();
+    storage.setItem(STORAGE_KEYS.LAST_WEATHER, JSON.stringify(snapshot));
+    $('#city-input').value = '';
+    suggestions = [];
+    ui.updateCitySuggestions([], $('#city-suggestions'));
   } catch (error) {
-    ui.showError(
-      error.message.includes("Locația este blocată") ? "locationBlocked" : "locationError"
-    );
-  }
-}
-
-function addToRecentSearches(cityName) {
-  const safeCityName = normalizeCityInput(cityName);
-  if (!safeCityName) return;
-
-  // Check if city is already in recent searches
-  const index = recentSearches.indexOf(safeCityName);
-  if (index !== -1) {
-    // Remove it from current position
-    recentSearches.splice(index, 1);
-  }
-
-  // Add to beginning of array
-  recentSearches.unshift(safeCityName);
-
-  // Keep only the most recent searches
-  if (recentSearches.length > MAX_RECENT_SEARCHES) {
-    recentSearches.pop();
-  }
-
-  // Save to localStorage
-  localStorage.setItem(
-    STORAGE_KEYS.RECENT_SEARCHES,
-    JSON.stringify(recentSearches)
-  );
-
-  // Update the UI
-  ui.updateRecentSearchesList(recentSearches, displayWeather, removeRecentSearch);
-}
-
-function saveRecentSearches() {
-  localStorage.setItem(
-    STORAGE_KEYS.RECENT_SEARCHES,
-    JSON.stringify(recentSearches)
-  );
-  ui.updateRecentSearchesList(recentSearches, displayWeather, removeRecentSearch);
-}
-
-function removeRecentSearch(cityName) {
-  recentSearches = recentSearches.filter((city) => city !== cityName);
-  saveRecentSearches();
-}
-
-function clearRecentSearches() {
-  recentSearches = [];
-  saveRecentSearches();
-}
-
-function saveFavoriteCities() {
-  localStorage.setItem(
-    STORAGE_KEYS.FAVORITE_CITIES,
-    JSON.stringify(favoriteCities)
-  );
-  ui.updateFavoriteCitiesList(favoriteCities, displayWeather, removeFavoriteCity);
-  ui.updateFavoriteButton(currentCityName, favoriteCities);
-}
-
-function removeFavoriteCity(cityName) {
-  favoriteCities = favoriteCities.filter((city) => city !== cityName);
-  saveFavoriteCities();
-}
-
-function clearFavoriteCities() {
-  favoriteCities = [];
-  saveFavoriteCities();
-}
-
-function toggleCurrentFavorite() {
-  if (!currentCityName) return;
-
-  const index = favoriteCities.indexOf(currentCityName);
-  if (index !== -1) {
-    favoriteCities.splice(index, 1);
-  } else {
-    favoriteCities.unshift(currentCityName);
-    favoriteCities = favoriteCities.slice(0, MAX_FAVORITE_CITIES);
-  }
-
-  saveFavoriteCities();
-}
-
-async function shareCurrentWeather() {
-  if (!currentCityName) return;
-
-  const shareUrl = new URL(window.location.href);
-  shareUrl.search = "";
-  shareUrl.searchParams.set("city", currentCityName);
-  const url = shareUrl.toString();
-
-  // Prefer the native share sheet (mostly mobile); fall back to clipboard.
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: "Vremea", text: currentCityName, url });
-      return;
-    } catch (error) {
-      if (error && error.name === "AbortError") return; // user dismissed the sheet
-      // otherwise fall through to clipboard
-    }
-  }
-
-  try {
-    await navigator.clipboard.writeText(url);
-    ui.showSuccess("linkCopied");
-  } catch {
-    ui.showError("linkCopyError");
-  }
-}
-
-async function displayWeather({ city, lat, lon }) {
-  currentWeatherRequest = city ? { city: normalizeCityInput(city) } : { lat, lon };
-
-  try {
-    ui.showLoading();
-    ui.hideError();
-
-    // Fetch weather and forecast data by city name or coordinates
-    const data = await api.fetchWeatherAndForecast({
-      city,
-      lat,
-      lon,
-      units,
-      lang: currentLanguage // Trimite limba către API dacă API-ul o suportă
-    });
-
-    ui.displayWeatherData(data.weather, data.forecast, data.airQuality);
-    currentCityName = normalizeCityInput(data.weather.name);
-    ui.updateFavoriteButton(currentCityName, favoriteCities);
-    addToRecentSearches(data.weather.name);
-    saveSnapshot(data);
-  } catch (error) {
-    // Offline: keep showing the last saved weather instead of a hard error.
-    if (!navigator.onLine && renderSnapshot(readSnapshot())) {
-      ui.showToast("offlineDataNote", "");
+    if (sequence !== intent || error.name === 'AbortError') return;
+    const snapshot = readSnapshot();
+    if (!navigator.onLine && snapshotMatches(snapshot, location)) {
+      render(snapshot, true);
     } else {
-      let errorMessageKey = "dataFetchError"; // Cheia implicită de eroare
-      if (error.message.includes("Orașul nu a fost găsit") || error.message.includes("City not found")) {
-        errorMessageKey = "cityNotFound";
-      } else if (error.message.includes("HTTP error!") || error.message.includes("Eroare HTTP!")) {
-        errorMessageKey = "dataFetchError"; // Sau o cheie mai specifică dacă ai
-      } else if (error.message.includes("Locația este blocată")) {
-        errorMessageKey = "locationBlocked";
+      // Preserve the previously displayed city, including its actual units/language.
+      if (rendered) {
+        units = rendered.units;
+        language = rendered.language;
+        storage.setItem(STORAGE_KEYS.TEMPERATURE_UNIT, units);
+        applyPreferences();
+        ui.updateDataStatus(rendered, { saved: true, offline: !navigator.onLine });
       }
-      ui.showError(errorMessageKey); // Trimite cheia de traducere
+      ui.showError(!navigator.onLine ? 'offlineSearch' : error.code || 'dataFetchError');
     }
   } finally {
-    ui.hideLoading();
+    if (sequence === intent) ui.hideLoading();
   }
 }
-
-function setupEventListeners() {
-  elements.searchForm.addEventListener("submit", handleWeatherSearch);
-  elements.getLocationButton.addEventListener("click", handleLocationRequest);
-  elements.tempToggle.addEventListener("change", handleUnitChange);
-  elements.saveFavoriteButton.addEventListener("click", toggleCurrentFavorite);
-  elements.shareWeatherButton.addEventListener("click", shareCurrentWeather);
-  elements.refreshWeatherButton.addEventListener("click", refreshCurrentWeather);
-  elements.clearFavoritesButton.addEventListener("click", clearFavoriteCities);
-  elements.clearRecentButton.addEventListener("click", clearRecentSearches);
-  elements.cityInput.addEventListener("input", handleCityInput);
-  if (elements.themeSelect) {
-    elements.themeSelect.addEventListener("change", handleThemeChange);
-  }
-  if (elements.langSelect) { // Adaugă listener pentru selectorul de limbă
-    elements.langSelect.addEventListener("change", handleLanguageChange);
-  }
+function initialLocation() {
+  const params = new URLSearchParams(location.search);
+  const lat = params.get('lat');
+  const lon = params.get('lon');
+  if (lat !== null && lat.trim() && lon !== null && lon.trim() && api.validCoordinates(Number(lat), Number(lon))) return { lat: Number(lat), lon: Number(lon), name: cleanName(params.get('city')) || undefined };
+  const city = cleanName(params.get('city'));
+  if (city) return { city };
+  const snapshot = readSnapshot();
+  if (snapshot) return { lat: snapshot.data.weather.coord.lat, lon: snapshot.data.weather.coord.lon };
+  return recent[0] || null;
 }
-
-function handleWeatherSearch(event) {
-  event.preventDefault();
-  const city = normalizeCityInput(new FormData(event.target).get("city"));
-
-  if (!city) {
-    ui.showError("enterCityNameError"); // Trimite cheia de traducere corectă
-    return;
-  }
-
-  displayWeather({ city });
-}
-
-function handleCityInput(event) {
-  const query = normalizeCityInput(event.target.value);
-  window.clearTimeout(citySuggestionTimer);
-
-  if (!elements.citySuggestions || query.length < 3) {
-    ui.updateCitySuggestions([], elements.citySuggestions);
-    return;
-  }
-
-  citySuggestionTimer = window.setTimeout(async () => {
-    try {
-      const suggestions = await api.searchCitySuggestions(query);
-      ui.updateCitySuggestions(suggestions, elements.citySuggestions);
-    } catch {
-      ui.updateCitySuggestions([], elements.citySuggestions);
-    }
-  }, 250);
-}
-
-async function handleLocationRequest() {
+async function locate() {
+  const sequence = ++intent;
+  controller?.abort();
+  ui.hideLoading();
+  $('#get-location').disabled = true;
   try {
-    const { lat, lon } = await utils.getUserLocation();
-    displayWeather({ lat, lon });
-  } catch (error) {
-    ui.showError(
-      error.message.includes("Locația este blocată") ? "locationBlocked" : "locationError"
-    );
-  }
+    const position = await getUserLocation();
+    if (sequence === intent) await displayWeather(position);
+  } catch { if (sequence === intent) ui.showError('locationError'); }
+  finally { $('#get-location').disabled = false; }
 }
-
-function handleUnitChange() {
-  units = elements.tempToggle.checked ? "imperial" : "metric";
-  localStorage.setItem(STORAGE_KEYS.TEMPERATURE_UNIT, units);
+async function share() {
+  if (!current) return;
+  const url = new URL(location.origin + '/');
+  url.searchParams.set('lat', String(current.lat));
+  url.searchParams.set('lon', String(current.lon));
+  url.searchParams.set('city', current.name);
+  try {
+    if (navigator.share) await navigator.share({ title: 'Vremea', text: current.label, url: url.href });
+    else { await navigator.clipboard.writeText(url.href); ui.showToast('linkCopied'); }
+  } catch (error) { if (error.name !== 'AbortError') ui.showError('linkCopyError'); }
+}
+$('#search-form').addEventListener('submit', event => {
+  event.preventDefault();
+  const text = cleanName($('#city-input').value);
+  if (!text) return ui.showError('enterCityNameError');
+  const selected = suggestions.find(item => [item.name, item.state, item.country].filter(Boolean).join(', ') === text);
+  displayWeather(selected || { city: text });
+});
+$('#city-input').addEventListener('input', () => {
+  clearTimeout(suggestionTimer);
+  suggestionController?.abort();
+  suggestions = [];
+  ui.updateCitySuggestions([], $('#city-suggestions'));
+  const query = cleanName($('#city-input').value);
+  if (query.length < 3 || !navigator.onLine) return;
+  suggestionTimer = setTimeout(async () => {
+    const request = new AbortController();
+    suggestionController = request;
+    try {
+      const data = await api.searchCitySuggestions(query, { signal: request.signal });
+      if ($('#city-input').value.trim() === query && !request.signal.aborted) { suggestions = data; ui.updateCitySuggestions(data, $('#city-suggestions')); }
+    } catch { /* Manual search remains available. */ }
+  }, 400);
+});
+$('#get-location').addEventListener('click', locate);
+$('#refresh-weather').addEventListener('click', () => { if (current) displayWeather(current); });
+$('#save-favorite').addEventListener('click', () => {
+  if (!current) return;
+  const key = locationKey(current);
+  favorites = favorites.some(item => locationKey(item) === key) ? favorites.filter(item => locationKey(item) !== key) : [current, ...favorites].slice(0, MAX_FAVORITE_CITIES);
+  saveLists();
+});
+$('#share-weather').addEventListener('click', share);
+$('#clear-favorites').addEventListener('click', () => { favorites = []; saveLists(); });
+$('#clear-recent').addEventListener('click', () => { recent = []; saveLists(); });
+$('#temp-toggle').addEventListener('change', () => {
+  units = $('#temp-toggle').checked ? 'imperial' : 'metric';
+  storage.setItem(STORAGE_KEYS.TEMPERATURE_UNIT, units);
   ui.updateTemperatureUnitDisplay(units);
-  refreshCurrentWeather();
+  if (current) displayWeather(current);
+});
+$('#lang-select').addEventListener('change', () => {
+  language = $('#lang-select').value === 'en' ? 'en' : 'ro';
+  applyPreferences();
+  if (current) displayWeather(current);
+});
+$('#theme-select').value = ui.isKnownTheme(storage.getItem(STORAGE_KEYS.THEME)) ? storage.getItem(STORAGE_KEYS.THEME) : 'auto';
+$('#theme-select').addEventListener('change', event => {
+  storage.setItem(STORAGE_KEYS.THEME, event.target.value);
+  ui.applyTheme(event.target.value);
+  if (rendered) ui.redrawForecast?.();
+});
+document.querySelectorAll('[data-city]').forEach(button => button.addEventListener('click', () => displayWeather({ city: button.dataset.city })));
+$('#clear-local-data').addEventListener('click', () => {
+  ++intent;
+  controller?.abort();
+  suggestionController?.abort();
+  clearTimeout(suggestionTimer);
+  for (const key of Object.values(STORAGE_KEYS)) storage.removeItem(key);
+  history.replaceState(null, '', '/');
+  location.reload();
+});
+function connectionChanged() {
+  ui.updateConnectionStatus();
+  if (rendered) ui.updateDataStatus(rendered, { saved: !navigator.onLine, offline: !navigator.onLine });
 }
-
-function refreshCurrentWeather() {
-  if (currentWeatherRequest) {
-    displayWeather(currentWeatherRequest);
-    return;
-  }
-
-  displayInitialWeather();
-}
-
-/**
- * Handles language change event.
- * Updates the current language, saves it to localStorage,
- * applies static UI translations, and refreshes initial weather display.
- * @param {Event} event - The change event from the language select element.
- */
-function handleLanguageChange(event) {
-  currentLanguage = event.target.value;
-  localStorage.setItem(STORAGE_KEYS.LANGUAGE, currentLanguage);
-  ui.applyStaticUITranslations(currentLanguage); // Aplică traducerile statice
-  ui.updateFavoriteButton(currentCityName, favoriteCities);
-  displayInitialWeather(); // Re-fetch weather data (dacă API-ul OpenWeatherMap suportă limba, altfel doar reîmprospătează UI-ul)
-}
-
-function handleThemeChange(event) {
-  const theme = ui.isKnownTheme(event.target.value) ? event.target.value : "auto";
-  localStorage.setItem(STORAGE_KEYS.THEME, theme);
-  ui.applyTheme(theme);
-}
-
-function registerServiceWorker() {
-  if (!("serviceWorker" in navigator) || window.location.protocol === "file:") {
-    return;
-  }
-
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw-v4.js").catch(() => {
-      // Aplicația rămâne funcțională fără PWA/offline cache.
-    });
-  });
-}
+window.addEventListener('online', connectionChanged);
+window.addEventListener('offline', connectionChanged);
+setInterval(() => { if (rendered) ui.updateDataStatus(rendered, { saved: !navigator.onLine, offline: !navigator.onLine }); }, 60_000);
+applyPreferences();
+ui.updateConnectionStatus();
+const initial = initialLocation();
+const snapshot = readSnapshot();
+if (snapshotMatches(snapshot, initial)) render(snapshot, true);
+if (initial && navigator.onLine) displayWeather(initial);
+else if (!navigator.onLine && !rendered) ui.showError('offlineSearch');
+if ('serviceWorker' in navigator) window.addEventListener('load', () => {
+  navigator.serviceWorker.register('/sw-v4.js', { updateViaCache: 'none' }).catch(() => {});
+});

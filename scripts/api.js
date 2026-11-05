@@ -1,207 +1,77 @@
-// scripts/api.js
-// Acest modul gestionează interacțiunile cu API-ul OpenWeatherMap.
+import { OPENWEATHER_PROXY_BASE_URL } from './config.js?v=20261105-2';
 
-import {
-    OPENWEATHER_PROXY_BASE_URL,
-  } from './config.js?v=20260630-1'; // Importă constantele din config.js (sunt în același folder scripts/)
-
-  const REQUEST_TIMEOUT_MS = 8000;
-
-  function isValidLatitude(value) {
-    return Number.isFinite(value) && value >= -90 && value <= 90;
-  }
-
-  function isValidLongitude(value) {
-    return Number.isFinite(value) && value >= -180 && value <= 180;
-  }
-
-  function normalizeCity(city) {
-    const normalizedCity = String(city || '').trim().replace(/\s+/g, ' ');
-
-    if (!normalizedCity || normalizedCity.length > 80) {
-      throw new Error('Numele orașului este invalid.');
-    }
-
-    return normalizedCity;
-  }
-
-  function normalizeLanguage(lang) {
-    return ['ro', 'en'].includes(lang) ? lang : 'ro';
-  }
-
-  function normalizeUnits(units) {
-    return units === 'imperial' ? 'imperial' : 'metric';
-  }
-
-  async function fetchJson(url) {
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
-    try {
-      const res = await fetch(url, {
-        signal: controller.signal,
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error(`Eroare HTTP! status: ${res.status}`);
-      }
-
-      return res.json();
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        throw new Error('Cererea către serviciul meteo a expirat.');
-      }
-
-      throw error;
-    } finally {
-      window.clearTimeout(timeoutId);
-    }
-  }
-
-  function buildOpenWeatherUrl(path, params) {
-    const sanitizedParams = new URLSearchParams(params);
-
-    return `${OPENWEATHER_PROXY_BASE_URL}/${path}?${sanitizedParams.toString()}`;
-  }
-
-  async function resolveCoordinates({ city, lat, lon }) {
-    const parsedLat = Number(lat);
-    const parsedLon = Number(lon);
-
-    if (city) {
-      const geoUrl = buildOpenWeatherUrl('geo/direct', {
-        q: normalizeCity(city),
-        limit: '1',
-      });
-      const geoData = await fetchJson(geoUrl);
-      if (!Array.isArray(geoData) || geoData.length === 0) {
-        throw new Error('Orașul nu a fost găsit.');
-      }
-
-      return {
-        lat: geoData[0].lat,
-        lon: geoData[0].lon,
-      };
-    }
-
-    if (!isValidLatitude(parsedLat) || !isValidLongitude(parsedLon)) {
-      throw new Error('Coordonatele sau numele orașului sunt necesare pentru a extrage vremea.');
-    }
-
-    return {
-      lat: parsedLat,
-      lon: parsedLon,
-    };
-  }
-  
-  /**
-   * Caută sugestii de orașe prin OpenWeatherMap Geocoding API.
-   * @param {string} query - Textul introdus de utilizator.
-   * @returns {Promise<Array<{name: string, country: string, state?: string, lat: number, lon: number}>>}
-   */
-  export async function searchCitySuggestions(query) {
-    const geoUrl = buildOpenWeatherUrl('geo/direct', {
-      q: normalizeCity(query),
-      limit: '5',
+export class WeatherError extends Error {
+  constructor(code, status = 0) { super(code); this.name = 'WeatherError'; this.code = code; this.status = status; }
+}
+export function validCoordinates(lat, lon) {
+  return typeof lat === 'number' && Number.isFinite(lat) && lat >= -90 && lat <= 90 && typeof lon === 'number' && Number.isFinite(lon) && lon >= -180 && lon <= 180;
+}
+export function validWeather(data) {
+  return Boolean(data && typeof data.name === 'string' && Number.isFinite(data.dt) && Number.isFinite(data.timezone) && Number.isFinite(data.main?.temp) && Number.isFinite(data.main?.feels_like) && Number.isFinite(data.main?.humidity) && Number.isFinite(data.main?.pressure) && Number.isFinite(data.wind?.speed) && validCoordinates(data.coord?.lat, data.coord?.lon) && Array.isArray(data.weather) && data.weather.length && /^\d{2}[dn]$/.test(data.weather[0].icon));
+}
+export function validForecast(data) {
+  return Array.isArray(data?.list) && data.list.length > 0 && data.list.length <= 40 && data.list.every(item => Number.isFinite(item.dt) && Number.isFinite(item.main?.temp) && Number.isFinite(item.main?.temp_min) && Number.isFinite(item.main?.temp_max) && Number.isFinite(item.wind?.speed) && /^\d{2}[dn]$/.test(item.weather?.[0]?.icon));
+}
+async function fetchJson(path, params, signal) {
+  const timeout = AbortSignal.timeout(12_000);
+  let response;
+  try {
+    response = await fetch(`${OPENWEATHER_PROXY_BASE_URL}/${path}?${new URLSearchParams(params)}`, {
+      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+      headers: { Accept: 'application/json' }, cache: 'no-store', credentials: 'same-origin',
     });
-    const geoData = await fetchJson(geoUrl);
-
-    if (!Array.isArray(geoData)) {
-      return [];
+    if (!response.ok) throw new WeatherError(response.status === 429 ? 'rateLimited' : response.status === 404 ? 'cityNotFound' : 'serviceUnavailable', response.status);
+    const data = await response.json();
+    if (data && !Array.isArray(data)) {
+      const age = Math.max(0, Number(response.headers.get('X-Weather-Age')) || 0);
+      data._cache = { stale: response.headers.get('X-Weather-Cache') === 'STALE', fetchedAt: Date.now() - age * 1000 };
     }
-
-    return geoData.map((city) => ({
-      name: city.name,
-      country: city.country,
-      state: city.state,
-      lat: city.lat,
-      lon: city.lon,
-    }));
+    return data;
+  } catch (error) {
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+    if (timeout.aborted) throw new WeatherError('requestTimeout');
+    throw error;
   }
-
-  /**
-   * Extrage date meteo de la OpenWeatherMap API.
-   * @param {Object} options - Opțiuni pentru extragerea vremii.
-   * @param {string} [options.city] - Numele orașului.
-   * @param {number} [options.lat] - Latitudine.
-   * @param {number} [options.lon] - Longitudine.
-   * @param {string} [options.units='metric'] - Unitatea de temperatură (metric, imperial).
-   * @param {string} [options.lang='en'] - Limba pentru răspunsurile API.
-   * @returns {Promise<Object>} Datele meteo.
-   */
-  export async function fetchWeatherData({ city, lat, lon, units = 'metric', lang = 'en' }) {
-    const coordinates = await resolveCoordinates({ city, lat, lon });
-    const url = buildOpenWeatherUrl('weather', {
-      lat: String(coordinates.lat),
-      lon: String(coordinates.lon),
-      units: normalizeUnits(units),
-      lang: normalizeLanguage(lang),
-    });
-    return fetchJson(url);
+}
+function cityName(value) {
+  const name = String(value || '').normalize('NFC').trim().replace(/\s+/g, ' ');
+  if (!name || name.length > 80 || /[\u0000-\u001f\u007f<>]/.test(name)) throw new WeatherError('enterCityNameError');
+  return name;
+}
+export async function searchCitySuggestions(query, { signal } = {}) {
+  const data = await fetchJson('geo/direct', { q: cityName(query), limit: '5' }, signal);
+  if (!Array.isArray(data)) throw new WeatherError('serviceUnavailable');
+  return data.filter(city => typeof city.name === 'string' && validCoordinates(city.lat, city.lon)).map(city => ({ name: city.name, country: city.country || '', state: city.state || '', lat: city.lat, lon: city.lon }));
+}
+async function resolveCoordinates({ city, lat, lon, signal, lang = 'ro', name, country }) {
+  if (city) {
+    const data = await fetchJson('geo/direct', { q: cityName(city), limit: '1' }, signal);
+    if (!Array.isArray(data) || !data.length) throw new WeatherError('cityNotFound');
+    if (!validCoordinates(data[0].lat, data[0].lon)) throw new WeatherError('serviceUnavailable');
+    return { lat: data[0].lat, lon: data[0].lon, name: data[0].local_names?.[lang] || data[0].name, country: data[0].country };
   }
-  
-  /**
-   * Extrage datele prognozei pe 5 zile de la OpenWeatherMap API.
-   * @param {Object} options - Opțiuni pentru extragerea prognozei.
-   * @param {string} [options.city] - Numele orașului.
-   * @param {number} [options.lat] - Latitudine.
-   * @param {number} [options.lon] - Longitudine.
-   * @param {string} [options.units='metric'] - Unitatea de temperatură (metric, imperial).
-   * @param {string} [options.lang='en'] - Limba pentru răspunsurile API.
-   * @returns {Promise<Object>} Datele prognozei.
-   */
-  export async function fetchForecastData({ city, lat, lon, units = 'metric', lang = 'en' }) {
-    const coordinates = await resolveCoordinates({ city, lat, lon });
-    const url = buildOpenWeatherUrl('forecast', {
-      lat: String(coordinates.lat),
-      lon: String(coordinates.lon),
-      units: normalizeUnits(units),
-      lang: normalizeLanguage(lang),
-    });
-    return fetchJson(url);
-  }
-
-  /**
-   * Extrage date despre calitatea aerului de la OpenWeatherMap Air Pollution API.
-   * @param {Object} options - Opțiuni pentru calitatea aerului.
-   * @param {string} [options.city] - Numele orașului.
-   * @param {number} [options.lat] - Latitudine.
-   * @param {number} [options.lon] - Longitudine.
-   * @returns {Promise<Object>} Datele despre calitatea aerului.
-   */
-  export async function fetchAirQualityData({ city, lat, lon }) {
-    const coordinates = await resolveCoordinates({ city, lat, lon });
-    const url = buildOpenWeatherUrl('air_pollution', {
-      lat: String(coordinates.lat),
-      lon: String(coordinates.lon),
-    });
-    return fetchJson(url);
-  }
-  
-  /**
-   * Extrage atât datele meteo curente, cât și datele prognozei.
-   * @param {Object} options - Opțiuni pentru extragerea vremii și a prognozei.
-   * @param {string} [options.city] - Numele orașului.
-   * @param {number} [options.lat] - Latitudine.
-   * @param {number} [options.lon] - Longitudine.
-   * @param {string} [options.units='metric'] - Unitatea de temperatură (metric, imperial).
-   * @param {string} [options.lang='en'] - Limba pentru răspunsurile API.
-   * @returns {Promise<{weather: Object, forecast: Object}>} Date combinate de vreme și prognoză.
-   */
-  export async function fetchWeatherAndForecast({ city, lat, lon, units, lang = 'en' }) {
-    const coordinates = await resolveCoordinates({ city, lat, lon });
-    const weatherPromise = fetchWeatherData({ ...coordinates, units, lang });
-    const forecastPromise = fetchForecastData({ ...coordinates, units, lang });
-    const airQualityPromise = fetchAirQualityData(coordinates);
-  
-    const [weather, forecast, airQuality] = await Promise.all([
-      weatherPromise,
-      forecastPromise,
-      airQualityPromise,
-    ]);
-    return { weather, forecast, airQuality };
-  }
-  
+  if (!validCoordinates(lat, lon)) throw new WeatherError('invalidLocation');
+  return { lat, lon, name, country };
+}
+function requestOptions({ lat, lon, units = 'metric', lang = 'ro' }) {
+  return { lat: String(lat), lon: String(lon), units: units === 'imperial' ? 'imperial' : 'metric', lang: lang === 'en' ? 'en' : 'ro' };
+}
+export async function fetchWeatherAndForecast(options) {
+  const coordinates = await resolveCoordinates(options);
+  const params = requestOptions({ ...options, ...coordinates });
+  const [weather, forecast, airQuality] = await Promise.allSettled([
+    fetchJson('weather', params, options.signal),
+    fetchJson('forecast', params, options.signal),
+    fetchJson('air_pollution', { lat: params.lat, lon: params.lon }, options.signal),
+  ]);
+  if (options.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+  if (weather.status !== 'fulfilled') throw weather.reason;
+  if (!validWeather(weather.value)) throw new WeatherError('serviceUnavailable');
+  if (coordinates.name) weather.value.name = String(coordinates.name).slice(0, 80);
+  if (coordinates.country && weather.value.sys) weather.value.sys.country = coordinates.country;
+  return {
+    weather: weather.value,
+    forecast: forecast.status === 'fulfilled' && validForecast(forecast.value) ? forecast.value : null,
+    airQuality: airQuality.status === 'fulfilled' ? airQuality.value : null,
+  };
+}

@@ -1,69 +1,19 @@
-const CACHE_NAME = "weather-app-v11";
-const APP_SHELL = [
-  "/",
-  "/index.html",
-  "/offline.html",
-  "/manifest.webmanifest",
-  "/favicon.ico",
-  "/icons/icon.svg",
-  "/icons/favicon-32.png",
-  "/icons/icon-192.png",
-  "/icons/apple-touch-icon.png",
-  "/scripts/api.js?v=20260630-1",
-  "/scripts/app.js?v=20260630-1",
-  "/scripts/config.js?v=20260630-1",
-  "/scripts/theme.js?v=20260630-1",
-  "/scripts/ui.js?v=20260630-1",
-  "/scripts/utils.js?v=20260630-1",
-  "/styles/styles.css?v=20260630-1",
-];
-
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
-  );
+const CACHE_NAME = 'weather-app-v12';
+const VERSION = '20261105-2';
+const APP_SHELL = ['/', '/index.html', '/offline.html', '/manifest.webmanifest', '/favicon.ico', '/icons/icon.svg', '/icons/favicon-32.png', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/maskable-512.png', '/icons/apple-touch-icon.png', ...['api', 'app', 'config', 'theme', 'ui', 'utils', 'storage'].map(name => `/scripts/${name}.js?v=${VERSION}`), `/styles/styles.css?v=${VERSION}`];
+const shellUrls = new Set(APP_SHELL.map(path => new URL(path, self.location.origin).href));
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
 });
-
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      ))
-      .then(() => self.clients.claim())
-  );
+self.addEventListener('activate', event => {
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('weather-app-') && key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim()));
 });
-
-self.addEventListener("fetch", (event) => {
-  const requestUrl = new URL(event.request.url);
-
-  if (event.request.method !== "GET" || requestUrl.pathname.startsWith("/api/")) {
-    return;
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/') || url.pathname === '/healthz') return;
+  if (event.request.mode === 'navigate') {
+    event.respondWith(fetch(event.request).then(response => response.ok ? response : caches.match('/index.html').then(cached => cached || response)).catch(async () => await caches.match('/index.html') || await caches.match('/offline.html')));
+  } else if (shellUrls.has(url.href)) {
+    event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request)));
   }
-
-  if (event.request.mode === "navigate") {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match("/offline.html"))
-    );
-    return;
-  }
-
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      return fetch(event.request).then((networkResponse) => {
-        if (networkResponse.ok && requestUrl.origin === self.location.origin) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-        }
-
-        return networkResponse;
-      });
-    })
-  );
 });

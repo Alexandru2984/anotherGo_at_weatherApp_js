@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' https://openweathermap.org data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+      content="default-src 'self'; script-src 'self'; style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' https://openweathermap.org data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="theme-color" content="#212121" />
@@ -38,13 +38,19 @@
     />
 
     <!-- Fisierele CSS și JavaScript ale aplicației noastre, cu căile corecte -->
-    <link rel="stylesheet" href="styles/styles.css?v=20260630-1" />
-    <script src="scripts/theme.js?v=20260630-1"></script>
-    <script type="module" src="scripts/app.js?v=20260630-1" defer></script>
+    <link rel="stylesheet" href="styles/styles.css?v=20261105-2" />
+    <script src="scripts/theme.js?v=20261105-2"></script>
+    <script type="module" src="scripts/app.js?v=20261105-2" defer></script>
   </head>
   <body>
     <div class="container">
-      <main>
+      <header class="app-header"><a class="brand" href="/" aria-label="Vremea"><img src="/icons/icon.svg" width="36" height="36" alt="" /> Vremea<span class="brand-dot">.</span></a><span id="connection-status" class="connection-status" role="status"></span></header>
+      <main id="main-content">
+        <section id="welcome" class="card welcome">
+          <h1 data-i18n="welcomeTitle">Vremea, pe înțelesul tău.</h1>
+          <p data-i18n="welcomeText">Caută un oraș și explorează următoarele zile. Locația ta este folosită doar când o ceri.</p>
+          <div class="quick-cities"><button type="button" class="btn btn-small btn-ghost" data-city="București,RO">București</button><button type="button" class="btn btn-small btn-ghost" data-city="Cluj-Napoca,RO">Cluj-Napoca</button><button type="button" class="btn btn-small btn-ghost" data-city="London,GB">London</button></div>
+        </section>
         <!-- Search Section -->
         <section class="search-section">
           <div class="top-bar">
@@ -78,7 +84,7 @@
 
             <div class="theme-selector">
               <select id="theme-select" aria-label="Select theme">
-                <option value="auto" data-i18n="themeAuto">Random</option>
+                <option value="auto" data-i18n="themeAuto">Sistem</option>
                 <option value="dark" data-i18n="themeDark">Dark</option>
                 <option value="light" data-i18n="themeLight">Light</option>
                 <option value="neon" data-i18n="themeNeon">Neon</option>
@@ -120,6 +126,8 @@
         <!-- Error Message -->
         <div id="error-message" class="error-message hidden" role="alert" aria-live="assertive"></div>
 
+        <p id="data-status" class="data-status hidden" role="status"></p>
+        <p id="partial-status" class="data-status hidden" role="status"></p>
         <!-- Weather Information -->
         <section id="weather-info" class="card weather-info hidden">
           <div class="city-info">
@@ -234,6 +242,7 @@
             </div>
           </div>
 
+          <p class="muted advisory-note" data-i18n="advisoryNote">Indicii calculate din prognoză; nu sunt avertizări meteo oficiale.</p>
           <div id="weather-alerts" class="weather-alerts hidden"></div>
 
           <div id="air-quality" class="air-quality data-panel hidden">
@@ -337,6 +346,8 @@
             >OpenWeatherMap</a
           >
         </p>
+        <p data-i18n="localDataNote">Favoritele și ultima prognoză se păstrează în acest browser.</p>
+        <button type="button" id="clear-local-data" class="btn btn-small btn-ghost" data-i18n="clearLocalData">Șterge datele locale</button>
       </footer>
     </div>
 
