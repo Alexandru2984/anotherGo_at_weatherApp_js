@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' https://openweathermap.org data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' https://openweathermap.org data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="theme-color" content="#212121" />
@@ -20,31 +20,16 @@
     <meta name="color-scheme" content="dark light" />
     <meta name="description" content="Aplicație meteo: vremea curentă, prognoză pe 5 zile, calitatea aerului, favorite și teme." />
 
-    <!-- Font Awesome for icons -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-      integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0"
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    />
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
-      rel="stylesheet"
-    />
-
+    <link rel="stylesheet" href="styles/icons.css?v=20261105-3" />
     <!-- Fisierele CSS și JavaScript ale aplicației noastre, cu căile corecte -->
-    <link rel="stylesheet" href="styles/styles.css?v=20261105-2" />
-    <script src="scripts/theme.js?v=20261105-2"></script>
-    <script type="module" src="scripts/app.js?v=20261105-2" defer></script>
+    <link rel="stylesheet" href="styles/styles.css?v=20261105-3" />
+    <script src="scripts/theme.js?v=20261105-3"></script>
+    <script type="module" src="scripts/app.js?v=20261105-3" defer></script>
   </head>
   <body>
+    <a class="skip-link" href="#main-content" data-i18n="skipToContent">Sari la conținut</a>
     <div class="container">
-      <header class="app-header"><a class="brand" href="/" aria-label="Vremea"><img src="/icons/icon.svg" width="36" height="36" alt="" /> Vremea<span class="brand-dot">.</span></a><span id="connection-status" class="connection-status" role="status"></span></header>
+      <header class="app-header"><a class="brand" href="/" aria-label="Vremea"><img src="/icons/icon.svg" width="36" height="36" alt="" /> Vremea<span class="brand-dot">.</span></a><nav class="header-nav" aria-label="Navigare"><a href="#weather-info" data-i18n="navToday">Acum</a><a href="#forecast-section" data-i18n="navForecast">Prognoză</a><a href="#planner-section" data-i18n="navPlanner">Planificator</a></nav><span id="connection-status" class="connection-status" role="status"></span></header>
       <main id="main-content">
         <section id="welcome" class="card welcome">
           <h1 data-i18n="welcomeTitle">Vremea, pe înțelesul tău.</h1>
@@ -128,6 +113,11 @@
 
         <p id="data-status" class="data-status hidden" role="status"></p>
         <p id="partial-status" class="data-status hidden" role="status"></p>
+        <section id="summary-section" class="card summary-section hidden">
+          <h2 data-i18n="summaryTitle">Următoarele 24 de ore</h2>
+          <div id="weather-summary" class="summary-grid"></div>
+        </section>
+        <div class="dashboard">
         <!-- Weather Information -->
         <section id="weather-info" class="card weather-info hidden">
           <div class="city-info">
@@ -182,7 +172,7 @@
             </div>
 
             <div class="weather-icon-container">
-              <img id="weather-icon" src="#" alt="Iconiță meteo" data-i18n-alt="weatherIconAlt"/>
+              <img id="weather-icon" src="/icons/icon.svg" width="130" height="130" alt="Iconiță meteo" data-i18n-alt="weatherIconAlt"/>
               <p id="description"></p>
             </div>
           </div>
@@ -214,6 +204,28 @@
             </div>
           </div>
 
+          <p class="muted advisory-note" data-i18n="advisoryNote">Indicii calculate din prognoză; nu sunt avertizări meteo oficiale.</p>
+          <div id="weather-alerts" class="weather-alerts hidden"></div>
+
+          <div id="air-quality" class="air-quality data-panel hidden">
+            <div class="data-row">
+              <i class="fas fa-leaf data-icon"></i>
+              <span class="data-label" data-i18n="airQuality">Calitatea aerului</span>
+              <div class="data-value">
+                <span id="aqi-label"></span>
+              </div>
+            </div>
+            <div class="air-quality-meter" aria-hidden="true">
+              <div id="aqi-indicator" class="air-quality-indicator"></div>
+            </div>
+            <div class="air-quality-components">
+              <span>PM2.5: <strong id="pm25"></strong></span>
+              <span>PM10: <strong id="pm10"></strong></span>
+              <span>O3: <strong id="o3"></strong></span>
+            </div>
+          </div>
+
+          <details class="weather-expanded"><summary data-i18n="moreDetails">Mai multe detalii</summary>
           <div id="weather-extra" class="weather-extra data-panel">
             <div class="data-row">
               <i class="fas fa-eye data-icon"></i>
@@ -242,27 +254,6 @@
             </div>
           </div>
 
-          <p class="muted advisory-note" data-i18n="advisoryNote">Indicii calculate din prognoză; nu sunt avertizări meteo oficiale.</p>
-          <div id="weather-alerts" class="weather-alerts hidden"></div>
-
-          <div id="air-quality" class="air-quality data-panel hidden">
-            <div class="data-row">
-              <i class="fas fa-leaf data-icon"></i>
-              <span class="data-label" data-i18n="airQuality">Calitatea aerului</span>
-              <div class="data-value">
-                <span id="aqi-label"></span>
-              </div>
-            </div>
-            <div class="air-quality-meter" aria-hidden="true">
-              <div id="aqi-indicator" class="air-quality-indicator"></div>
-            </div>
-            <div class="air-quality-components">
-              <span>PM2.5: <strong id="pm25"></strong></span>
-              <span>PM10: <strong id="pm10"></strong></span>
-              <span>O3: <strong id="o3"></strong></span>
-            </div>
-          </div>
-
           <div class="sun-times data-panel">
             <div class="data-row">
               <i class="fas fa-sun data-icon"></i>
@@ -286,6 +277,7 @@
             </div>
           </div>
 
+          </details>
           <!-- Temperature Range Visualization -->
           <div class="temperature-visualization">
             <div id="temp-range" class="temp-range">
@@ -298,20 +290,32 @@
           </div>
         </section>
 
-        <!-- Forecast -->
+        <div class="forecast-column">
         <section id="forecast-section" class="card forecast-section hidden">
-          <h3 data-i18n="forecastTitle">Prognoză pe 5 zile</h3>
-          <canvas
-            id="temperature-chart"
-            class="temperature-chart"
-            width="560"
-            height="180"
-            aria-label="Grafic temperatură"
-            role="img"
-          ></canvas>
+          <h2 data-i18n="forecastTitle">Prognoză pe 5 zile</h2>
+          <p class="section-note" data-i18n="forecastGuide">Alege o zi pentru detalii. Intervale de 3 ore, în ora locală a orașului.</p>
+          <div id="forecast-list" class="forecast-grid" role="group" aria-label="Zilele prognozei"></div>
+          <div class="forecast-toolbar"><h3 id="selected-day"></h3><div class="metric-switch" role="group" aria-label="Indicator grafic">
+            <button type="button" data-metric="temp" aria-pressed="true" data-i18n="temperatureMetric">Temperatură</button>
+            <button type="button" data-metric="rain" aria-pressed="false" data-i18n="rainProbability">Risc ploaie</button>
+            <button type="button" data-metric="wind" aria-pressed="false" data-i18n="wind">Vânt</button>
+          </div></div>
+          <canvas id="temperature-chart" class="temperature-chart" width="560" height="210" aria-label="Grafic temperatură" role="img"></canvas>
+          <output id="chart-reading" class="chart-reading" for="chart-cursor" aria-live="polite"></output>
+          <input type="range" id="chart-cursor" min="0" max="7" value="0" step="1" aria-label="Explorează intervalele prognozei" />
           <div id="hourly-forecast" class="hourly-forecast" aria-label="Prognoză pe ore"></div>
-          <div id="forecast-list" class="forecast-grid"></div>
+          <p class="section-note" data-i18n="forecastSource">Prognoză OpenWeather; valorile zilnice folosesc intervalele disponibile.</p>
         </section>
+        <section id="planner-section" class="card planner-section hidden">
+          <div class="section-heading"><h2 data-i18n="plannerTitle">Găsește-ți momentul</h2><span class="planner-symbol" aria-hidden="true">↗</span></div>
+          <p class="section-note" data-i18n="plannerText">Până la 3 intervale potrivite în următoarele 72 de ore.</p>
+          <label class="activity-control"><span data-i18n="activity">Activitate</span><select id="activity-select"><option value="walk" data-i18n="walk">Plimbare</option><option value="run" data-i18n="run">Alergare</option><option value="bike" data-i18n="bike">Ciclism</option></select></label>
+          <div id="activity-results" class="activity-results" aria-live="polite"></div>
+          <p id="activity-criteria" class="section-note"></p>
+          <p class="section-note" data-i18n="plannerNote">Intervale estimate, nu garanții. Verifică prognoza înainte de plecare.</p>
+        </section>
+        </div>
+        </div>
 
         <!-- Favorite Searches -->
         <section id="favorite-searches" class="card favorite-searches hidden">

@@ -7,6 +7,8 @@ export const MAX_RECENT_SEARCHES = 5; // Numărul maxim de căutări recente de 
 export const MAX_FAVORITE_CITIES = 8;
 
 export const STORAGE_KEYS = {
+    CHART_METRIC: "chartMetric",
+    ACTIVITY: "activityPreference",
     TEMPERATURE_UNIT: "temperatureUnit",
     RECENT_SEARCHES: "recentSearches",
     FAVORITE_CITIES: "favoriteCities",

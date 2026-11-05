@@ -1,4 +1,6 @@
-import { storage } from './storage.js?v=20261105-2';
+import { renderForecast, redrawForecast } from './insights.js?v=20261105-3';
+export { redrawForecast };
+import { storage } from './storage.js?v=20261105-3';
 // scripts/ui.js
 // Acest modul gestionează actualizarea interfeței utilizatorului și traducerile.
 
@@ -147,7 +149,7 @@ const UI_elements = {
       loading: "Se încarcă…",
       offlineDataNote: "Date salvate (ești offline).",
       alertThunderstorm: "Risc de furtună în prognoza apropiată.",
-      alertHeavyRain: "Ploaie semnificativă în următoarele ore.",
+      alertHeavyRain: "Ploaie în prognoza apropiată.",
       alertSnow: "Ninsoare în prognoza apropiată.",
       alertHighWind: "Vânt puternic. Verificați condițiile înainte de drum.",
       alertHeat: "Temperaturi ridicate. Hidratarea este importantă.",
@@ -218,7 +220,7 @@ const UI_elements = {
       loading: "Loading…",
       offlineDataNote: "Saved data (you are offline).",
       alertThunderstorm: "Thunderstorm risk in the nearby forecast.",
-      alertHeavyRain: "Significant rain in the next hours.",
+      alertHeavyRain: "Rain in the nearby forecast.",
       alertSnow: "Snow in the nearby forecast.",
       alertHighWind: "Strong wind. Check conditions before traveling.",
       alertHeat: "High temperatures. Hydration matters.",
@@ -414,60 +416,13 @@ const UI_elements = {
     UI_elements.tempIndicator.style.left = `${positionPercentage}%`;
     displayWeatherAlerts(weather, forecast, units);
     displayAirQualityData(airQuality);
-    displayTemperatureChart(forecast, units);
-    displayHourlyForecast(forecast, units);
-    displayForecastCards(forecast, units);
+    renderForecast(forecast, units, storage.getItem('language') || 'ro', t, weather);
   
     UI_elements.weatherInfo.classList.remove("hidden");
 
     if (UI_elements.searchTextInput) { // Verifică dacă elementul există înainte de a încerca să-l setezi
         UI_elements.searchTextInput.value = ''; // Golește câmpul de căutare
     }
-  }
-
-  function displayHourlyForecast(forecast, units) {
-    const hourlyForecast = UI_elements.hourlyForecast;
-    if (!hourlyForecast || !forecast || !Array.isArray(forecast.list)) return;
-
-    hourlyForecast.replaceChildren();
-    const currentLang = storage.getItem('language') || 'ro';
-    const timezone = forecast.city?.timezone || 0;
-
-    forecast.list.slice(0, 8).forEach((item) => {
-      const card = document.createElement("article");
-      const time = document.createElement("span");
-      const icon = document.createElement("img");
-      const temp = document.createElement("strong");
-      const meta = document.createElement("span");
-
-      card.className = "hourly-card";
-      time.className = "hourly-time";
-      icon.className = "hourly-icon";
-      temp.className = "hourly-temp";
-      meta.className = "hourly-meta";
-
-      const pop = Math.max(0, Math.min(100, Math.round((item.pop || 0) * 100)));
-      const popBar = document.createElement("div");
-      popBar.className = "hourly-pop";
-      popBar.title = `${pop}%`;
-      const popFill = document.createElement("span");
-      popFill.className = "hourly-pop-fill";
-      popFill.style.width = `${pop}%`;
-      popBar.appendChild(popFill);
-
-      time.textContent = formatTime(item.dt, timezone);
-      icon.src = `https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`;
-      icon.alt = item.weather[0].description;
-      icon.loading = "lazy";
-      temp.textContent = `${Math.round(item.main.temp)}°`;
-      meta.textContent = `${pop}% · ${item.wind.speed.toFixed(1)}${units === "metric" ? " m/s" : " mph"}`;
-
-      card.append(time, icon, temp, popBar, meta);
-      hourlyForecast.appendChild(card);
-    });
-
-    const translations = TRANSLATIONS[currentLang] || TRANSLATIONS.ro;
-    hourlyForecast.setAttribute("aria-label", translations.hourlyForecast);
   }
 
   function getWindCompass(degrees) {
@@ -530,10 +485,12 @@ const UI_elements = {
     const currentLang = storage.getItem('language') || 'ro';
     const translations = TRANSLATIONS[currentLang] || TRANSLATIONS.ro;
 
+    if (UI_elements.dayLength) UI_elements.dayLength.textContent = "—";
     if (UI_elements.dayLength && Number.isFinite(weather.sys?.sunrise) && Number.isFinite(weather.sys?.sunset)) {
       const seconds = Math.max(0, weather.sys.sunset - weather.sys.sunrise);
-      const hours = Math.floor(seconds / 3600);
-      const minutes = Math.round((seconds % 3600) / 60);
+      const totalMinutes = Math.round(seconds / 60);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
       UI_elements.dayLength.textContent = `${hours}h ${minutes}m`;
     }
 
@@ -565,14 +522,15 @@ const UI_elements = {
 
     const currentLang = storage.getItem('language') || 'ro';
     const translations = TRANSLATIONS[currentLang] || TRANSLATIONS.ro;
-    const aqi = Number(airQualityItem.main?.aqi || 0);
+    const aqi = Number(airQualityItem.main?.aqi);
+    if (![1, 2, 3, 4, 5].includes(aqi)) return;
     const components = airQualityItem.components || {};
 
     UI_elements.aqiLabel.textContent = translations[getAqiTranslationKey(aqi)];
     UI_elements.aqiIndicator.style.left = `${Math.max(0, Math.min(100, ((aqi || 1) - 1) * 25))}%`;
-    UI_elements.pm25.textContent = `${Math.round(components.pm2_5 || 0)} µg/m³`;
-    UI_elements.pm10.textContent = `${Math.round(components.pm10 || 0)} µg/m³`;
-    UI_elements.o3.textContent = `${Math.round(components.o3 || 0)} µg/m³`;
+    UI_elements.pm25.textContent = Number.isFinite(components.pm2_5) ? `${Math.round(components.pm2_5)} µg/m³` : "—";
+    UI_elements.pm10.textContent = Number.isFinite(components.pm10) ? `${Math.round(components.pm10)} µg/m³` : "—";
+    UI_elements.o3.textContent = Number.isFinite(components.o3) ? `${Math.round(components.o3)} µg/m³` : "—";
     UI_elements.airQuality.dataset.aqi = String(aqi || 0);
     UI_elements.airQuality.classList.remove("hidden");
   }
@@ -625,171 +583,6 @@ const UI_elements = {
     alertsContainer.classList.remove("hidden");
   }
 
-  function toRgba(color, alpha) {
-    const value = String(color || "").trim();
-    if (value.startsWith("#")) {
-      let hex = value.slice(1);
-      if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("");
-      const int = parseInt(hex, 16);
-      if (Number.isFinite(int)) {
-        return `rgba(${(int >> 16) & 255}, ${(int >> 8) & 255}, ${int & 255}, ${alpha})`;
-      }
-    }
-    if (value.startsWith("rgb")) {
-      const nums = value.replace(/rgba?\(|\)/g, "").split(",").slice(0, 3).join(", ");
-      return `rgba(${nums}, ${alpha})`;
-    }
-    return `rgba(100, 181, 246, ${alpha})`;
-  }
-
-  function displayTemperatureChart(forecast, units) {
-    const canvas = UI_elements.temperatureChart;
-    if (!canvas || !forecast || !Array.isArray(forecast.list)) return;
-
-    const points = forecast.list.slice(0, 8).map((item) => ({
-      temp: item.main.temp,
-      label: formatTime(item.dt, forecast.city?.timezone || 0),
-    }));
-
-    if (points.length < 2) return;
-
-    const ctx = canvas.getContext("2d");
-    const width = canvas.width;
-    const height = canvas.height;
-    const padding = 28;
-    const minTemp = Math.min(...points.map((point) => point.temp));
-    const maxTemp = Math.max(...points.map((point) => point.temp));
-    const tempRange = Math.max(1, maxTemp - minTemp);
-    const accent = getComputedStyle(document.documentElement).getPropertyValue("--primary-color").trim() || "#64b5f6";
-
-    const xAt = (index) => padding + (index / (points.length - 1)) * (width - padding * 2);
-    const yAt = (temp) => padding + ((maxTemp - temp) / tempRange) * (height - padding * 2);
-
-    ctx.clearRect(0, 0, width, height);
-
-    // baseline
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = "rgba(128, 128, 128, 0.25)";
-    ctx.beginPath();
-    ctx.moveTo(padding, height - padding);
-    ctx.lineTo(width - padding, height - padding);
-    ctx.stroke();
-
-    // gradient area fill under the curve
-    const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
-    gradient.addColorStop(0, toRgba(accent, 0.35));
-    gradient.addColorStop(1, toRgba(accent, 0.02));
-    ctx.beginPath();
-    ctx.moveTo(xAt(0), height - padding);
-    points.forEach((point, index) => ctx.lineTo(xAt(index), yAt(point.temp)));
-    ctx.lineTo(xAt(points.length - 1), height - padding);
-    ctx.closePath();
-    ctx.fillStyle = gradient;
-    ctx.fill();
-
-    // line
-    ctx.lineWidth = 2.5;
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = accent;
-    ctx.beginPath();
-    points.forEach((point, index) => {
-      const x = xAt(index);
-      const y = yAt(point.temp);
-      if (index === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-
-    // markers + labels (min/max emphasised)
-    ctx.font = "12px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillStyle = accent;
-    points.forEach((point, index) => {
-      const x = xAt(index);
-      const y = yAt(point.temp);
-      const isExtreme = point.temp === minTemp || point.temp === maxTemp;
-      ctx.beginPath();
-      ctx.arc(x, y, isExtreme ? 4.5 : 3, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillText(`${Math.round(point.temp)}°`, x, Math.max(14, y - 9));
-      if (index % 2 === 0) {
-        ctx.fillText(point.label, x, height - 8);
-      }
-    });
-
-    canvas.setAttribute("aria-label", `${points.map((point) => `${point.label}: ${Math.round(point.temp)}°`).join(", ")} ${units === "metric" ? "Celsius" : "Fahrenheit"}`);
-  }
-
-  function getDailyForecastItems(forecast) {
-    if (!forecast || !Array.isArray(forecast.list)) return [];
-
-    const dailyItems = new Map();
-    forecast.list.forEach((item) => {
-      const dateKey = new Date(item.dt * 1000).toISOString().slice(0, 10);
-      const hour = new Date(item.dt * 1000).getUTCHours();
-      const existingItem = dailyItems.get(dateKey);
-
-      if (!existingItem || Math.abs(hour - 12) < Math.abs(existingItem.hour - 12)) {
-        dailyItems.set(dateKey, {
-          hour,
-          item,
-        });
-      }
-    });
-
-    return Array.from(dailyItems.values()).slice(0, 5).map(({ item }) => item);
-  }
-
-  function displayForecastCards(forecast, units) {
-    const forecastList = UI_elements.forecastList;
-    if (!forecastList) return;
-
-    forecastList.replaceChildren();
-    const dailyItems = getDailyForecastItems(forecast);
-
-    if (dailyItems.length === 0) {
-      UI_elements.forecastSection.classList.add("hidden");
-      return;
-    }
-
-    const currentLang = storage.getItem('language') || 'ro';
-    dailyItems.forEach((item) => {
-      const card = document.createElement("article");
-      card.className = "forecast-card";
-
-      const date = document.createElement("span");
-      date.className = "forecast-day";
-      date.textContent = new Date(item.dt * 1000).toLocaleDateString(
-        LOCALES[currentLang] || LOCALES.ro,
-        { weekday: "short", day: "2-digit", month: "short" }
-      );
-
-      const icon = document.createElement("img");
-      icon.className = "forecast-icon";
-      icon.src = `https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`;
-      icon.alt = item.weather[0].description;
-      icon.loading = "lazy";
-
-      const temp = document.createElement("strong");
-      temp.className = "forecast-temp";
-      temp.textContent = `${Math.round(item.main.temp)}°`;
-
-      const meta = document.createElement("span");
-      meta.className = "forecast-meta";
-      meta.textContent = `${Math.round(item.main.humidity)}% · ${item.wind.speed.toFixed(1)}${units === "metric" ? " m/s" : " mph"}`;
-
-      card.append(date, icon, temp, meta);
-      forecastList.appendChild(card);
-    });
-
-    UI_elements.forecastSection.classList.remove("hidden");
-  }
-  
-  /**
-   * Actualizează lista de căutări recente.
-   * @param {Array<string>} searches - Tablou cu numele orașelor căutate recent.
-   * @param {Function} clickHandler - Funcția de apelat când se face clic pe o etichetă de căutare recentă.
-   */
   function createCityTag(city, clickHandler, removeHandler) {
     const listItem = document.createElement("li");
     const label = document.createElement("button");
@@ -1087,12 +880,36 @@ export function updateDataStatus(snapshot, { saved = false, offline = false } = 
   if (!element) return;
   const weather = snapshot.data.weather;
   const fetchedAt = Number.isFinite(weather._cache?.fetchedAt) ? weather._cache.fetchedAt : snapshot.savedAt;
+  const stale = [snapshot.data.weather, snapshot.data.forecast, snapshot.data.airQuality].some(data => data?._cache?.stale);
   const age = Math.max(0, Math.floor((Date.now() - fetchedAt) / 60000));
-  element.textContent = `${t(offline || saved ? 'savedData' : weather._cache?.stale ? 'staleData' : 'updated')} · ${age} ${t('minutesAgo')} · ${snapshot.units === 'imperial' ? '°F' : '°C'}`;
-  element.classList.toggle('is-stale', saved || offline || weather._cache?.stale || age > 15);
+  element.textContent = `${t(offline || saved ? 'savedData' : stale ? 'staleData' : 'updated')} · ${age} ${t('minutesAgo')} · ${snapshot.units === 'imperial' ? '°F' : '°C'}`;
+  element.classList.toggle('is-stale', saved || offline || stale || age > 15);
   element.classList.remove('hidden');
   const partial = document.querySelector('#partial-status');
   const degraded = !snapshot.data.forecast || !snapshot.data.airQuality?.list?.[0];
   partial.textContent = degraded ? t('partialData') : '';
   partial.classList.toggle('hidden', !degraded);
 }
+
+Object.assign(TRANSLATIONS.ro, {
+  today: 'Astăzi', minimum: 'min.', temperatureMetric: 'Temperatură', rainProbability: 'Risc ploaie', rainAmount: 'Precipitații', maxWind: 'Vânt maxim',
+  forecastGuide: 'Alege o zi pentru detalii. Intervale de 3 ore, în ora locală a orașului.',
+  forecastSource: 'Prognoză OpenWeather; valorile zilnice folosesc intervalele disponibile.',
+  exploreChart: 'Explorează intervalele prognozei', moreDetails: 'Mai multe detalii', summaryTitle: 'Următoarele 24 de ore', temperatureRange: 'Minim / maxim',
+  plannerTitle: 'Găsește-ți momentul', plannerText: 'Până la 3 intervale potrivite în următoarele 72 de ore.',
+  activity: 'Activitate', walk: 'Plimbare', run: 'Alergare', bike: 'Ciclism', criteria: 'Criterii',
+  noActivitySlots: 'Nu există intervale care să îndeplinească aceste criterii în prognoza disponibilă.',
+  plannerNote: 'Intervale estimate, nu garanții. Verifică prognoza înainte de plecare. Furtunile și ninsoarea sunt excluse; vântul include rafalele disponibile.',
+  navToday: 'Acum', navForecast: 'Prognoză', navPlanner: 'Planificator', skipToContent: 'Sari la conținut',
+});
+Object.assign(TRANSLATIONS.en, {
+  today: 'Today', minimum: 'min.', temperatureMetric: 'Temperature', rainProbability: 'Rain chance', rainAmount: 'Precipitation', maxWind: 'Max wind',
+  forecastGuide: 'Choose a day to explore. Three-hour intervals in the city’s local time.',
+  forecastSource: 'OpenWeather forecast; daily values use the available intervals.',
+  exploreChart: 'Explore forecast intervals', moreDetails: 'More details', summaryTitle: 'The next 24 hours', temperatureRange: 'Low / high',
+  plannerTitle: 'Find your moment', plannerText: 'Up to 3 matching slots in the next 72 hours.',
+  activity: 'Activity', walk: 'Walk', run: 'Run', bike: 'Cycle', criteria: 'Criteria',
+  noActivitySlots: 'No available forecast intervals meet these criteria.',
+  plannerNote: 'Estimated intervals, not guarantees. Check the forecast before leaving. Thunderstorms and snow are excluded; wind includes available gusts.',
+  navToday: 'Now', navForecast: 'Forecast', navPlanner: 'Planner', skipToContent: 'Skip to content',
+});

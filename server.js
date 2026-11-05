@@ -53,8 +53,8 @@ const mimeTypes = {
 };
 const securityHeaders = {
   'Content-Security-Policy': [
-    "default-src 'self'", "script-src 'self'", "style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com",
-    "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com", "img-src 'self' https://openweathermap.org data:",
+    "default-src 'self'", "script-src 'self'", "style-src 'self'",
+    "font-src 'self'", "img-src 'self' https://openweathermap.org data:",
     "connect-src 'self'", "worker-src 'self'", "manifest-src 'self'", "object-src 'none'",
     "base-uri 'none'", "form-action 'self'", "frame-ancestors 'none'",
   ].join('; '),

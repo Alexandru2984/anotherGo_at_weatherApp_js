@@ -1,6 +1,6 @@
-const CACHE_NAME = 'weather-app-v12';
-const VERSION = '20261105-2';
-const APP_SHELL = ['/', '/index.html', '/offline.html', '/manifest.webmanifest', '/favicon.ico', '/icons/icon.svg', '/icons/favicon-32.png', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/maskable-512.png', '/icons/apple-touch-icon.png', ...['api', 'app', 'config', 'theme', 'ui', 'utils', 'storage'].map(name => `/scripts/${name}.js?v=${VERSION}`), `/styles/styles.css?v=${VERSION}`];
+const CACHE_NAME = 'weather-app-v13';
+const VERSION = '20261105-3';
+const APP_SHELL = ['/', '/index.html', '/offline.html', '/manifest.webmanifest', '/favicon.ico', '/fonts/fa-solid-900.woff2', `/styles/icons.css?v=${VERSION}`, '/icons/icon.svg', '/icons/favicon-32.png', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/maskable-512.png', '/icons/apple-touch-icon.png', ...['api', 'app', 'config', 'theme', 'ui', 'utils', 'storage', 'forecast', 'insights'].map(name => `/scripts/${name}.js?v=${VERSION}`), `/styles/styles.css?v=${VERSION}`];
 const shellUrls = new Set(APP_SHELL.map(path => new URL(path, self.location.origin).href));
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));

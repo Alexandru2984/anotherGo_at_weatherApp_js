@@ -1,8 +1,8 @@
-import { DEFAULT_UNIT, MAX_FAVORITE_CITIES, MAX_RECENT_SEARCHES, STORAGE_KEYS } from './config.js?v=20261105-2';
-import { storage, readJson } from './storage.js?v=20261105-2';
-import * as ui from './ui.js?v=20261105-2';
-import { getUserLocation } from './utils.js?v=20261105-2';
-import * as api from './api.js?v=20261105-2';
+import { DEFAULT_UNIT, MAX_FAVORITE_CITIES, MAX_RECENT_SEARCHES, STORAGE_KEYS } from './config.js?v=20261105-3';
+import { storage, readJson } from './storage.js?v=20261105-3';
+import * as ui from './ui.js?v=20261105-3';
+import { getUserLocation } from './utils.js?v=20261105-3';
+import * as api from './api.js?v=20261105-3';
 
 const $ = selector => document.querySelector(selector);
 let units = storage.getItem(STORAGE_KEYS.TEMPERATURE_UNIT) === 'imperial' ? 'imperial' : DEFAULT_UNIT;
@@ -11,6 +11,7 @@ let recent = readLocations(STORAGE_KEYS.RECENT_SEARCHES, MAX_RECENT_SEARCHES);
 let favorites = readLocations(STORAGE_KEYS.FAVORITE_CITIES, MAX_FAVORITE_CITIES);
 let current = null;
 let rendered = null;
+let renderedSaved = false;
 let intent = 0;
 let controller;
 let suggestionController;
@@ -47,6 +48,7 @@ function applyPreferences() {
   ui.applyStaticUITranslations(language);
   ui.updateTemperatureUnitDisplay(units);
   updateLists();
+  ui.updateConnectionStatus();
 }
 function readSnapshot() {
   const snapshot = readJson(STORAGE_KEYS.LAST_WEATHER);
@@ -62,6 +64,7 @@ function snapshotMatches(snapshot, location) {
 }
 function render(snapshot, saved = false) {
   rendered = snapshot;
+  renderedSaved = saved;
   const weather = snapshot.data.weather;
   current = { name: weather.name, label: [weather.name, weather.sys?.country].filter(Boolean).join(', '), country: weather.sys?.country, lat: weather.coord.lat, lon: weather.coord.lon };
   ui.displayWeatherData(weather, snapshot.data.forecast, snapshot.data.airQuality, snapshot.units);
@@ -95,6 +98,7 @@ async function displayWeather(location) {
     } else {
       // Preserve the previously displayed city, including its actual units/language.
       if (rendered) {
+        renderedSaved = true;
         units = rendered.units;
         language = rendered.language;
         storage.setItem(STORAGE_KEYS.TEMPERATURE_UNIT, units);
@@ -203,11 +207,11 @@ $('#clear-local-data').addEventListener('click', () => {
 });
 function connectionChanged() {
   ui.updateConnectionStatus();
-  if (rendered) ui.updateDataStatus(rendered, { saved: !navigator.onLine, offline: !navigator.onLine });
+  if (rendered) ui.updateDataStatus(rendered, { saved: renderedSaved || !navigator.onLine, offline: !navigator.onLine });
 }
 window.addEventListener('online', connectionChanged);
 window.addEventListener('offline', connectionChanged);
-setInterval(() => { if (rendered) ui.updateDataStatus(rendered, { saved: !navigator.onLine, offline: !navigator.onLine }); }, 60_000);
+setInterval(() => { if (rendered) ui.updateDataStatus(rendered, { saved: renderedSaved || !navigator.onLine, offline: !navigator.onLine }); }, 60_000);
 applyPreferences();
 ui.updateConnectionStatus();
 const initial = initialLocation();
