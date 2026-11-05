@@ -1,23 +1,40 @@
 [Unit]
-Description=Weather app
-After=network.target
+Description=Weather app API proxy (Avoro canary)
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/micu/weather/anotherGo_at_weatherApp_js
+User=micu
+Group=micu
+WorkingDirectory=/srv/canary/weather.micutu.com/app
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=8105
 Environment=TRUST_PROXY=true
-Environment=APP_VERSION=1.0.0
-EnvironmentFile=/home/micu/weather/anotherGo_at_weatherApp_js/.env
+Environment=APP_VERSION=2.0.0
+Environment=PUBLIC_ORIGIN=https://weather.micutu.com
+EnvironmentFile=/srv/canary/weather.micutu.com/app/.env
 ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=5
+MemoryMax=256M
+TasksMax=64
+LimitNOFILE=1024
+UMask=0077
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectSystem=full
-ProtectHome=read-only
+ProtectSystem=strict
+ProtectHome=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectKernelLogs=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 
 [Install]
 WantedBy=multi-user.target

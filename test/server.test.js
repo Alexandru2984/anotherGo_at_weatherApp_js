@@ -75,13 +75,15 @@ test("getCacheKey strips appid and sorts params", () => {
   assert.equal(key, "/data/2.5/weather?lat=44&lon=26");
 });
 
-test("getClientIp prefers Cloudflare header, falls back to socket", () => {
-  assert.equal(srv.getClientIp({ headers: { "cf-connecting-ip": "9.9.9.9" }, socket: {} }), "9.9.9.9");
+test("getClientIp only trusts nginx on loopback", () => {
+  assert.equal(srv.getClientIp({ headers: { "x-real-ip": "9.9.9.9" }, socket: { remoteAddress: "127.0.0.1" } }), "9.9.9.9");
+  assert.equal(srv.getClientIp({ headers: { "x-real-ip": "9.9.9.9", "cf-connecting-ip": "8.8.8.8" }, socket: { remoteAddress: "1.2.3.4" } }), "1.2.3.4");
+  assert.equal(srv.getClientIp({ headers: { "x-real-ip": "fake" }, socket: { remoteAddress: "127.0.0.1" } }), "127.0.0.1");
   assert.equal(srv.getClientIp({ headers: {}, socket: { remoteAddress: "1.2.3.4" } }), "1.2.3.4");
 });
 
 test("isRateLimited blocks after the configured limit", () => {
-  const req = { headers: { "cf-connecting-ip": "5.5.5.5" }, socket: {} };
+  const req = { headers: { "x-real-ip": "5.5.5.5" }, socket: { remoteAddress: "127.0.0.1" } };
   assert.equal(srv.isRateLimited(req), false); // 1
   assert.equal(srv.isRateLimited(req), false); // 2
   assert.equal(srv.isRateLimited(req), false); // 3
@@ -108,4 +110,20 @@ test("sweepExpired removes stale cache and rate entries", () => {
   srv.sweepExpired();
   assert.ok(!srv.responseCache.has("old"));
   assert.ok(!srv.rateBuckets.has("ip"));
+});
+
+// Missing coordinates must never silently become the Gulf of Guinea (0,0).
+test("buildOpenWeatherUrl rejects missing, blank, duplicate and unknown parameters", () => {
+  for (const path of ["weather", "weather?lat=&lon=0", "weather?lat=1", "weather?lat=0&lon=0&lat=1", "weather?lat=0&lon=0&appid=attacker", "weather?lat=0&lon=0&units=kelvin", "weather?lat=0&lon=0&lang=xx", "weather?lat=0x10&lon=0"]) {
+    assert.equal(srv.buildOpenWeatherUrl(apiUrl(path)), null, path);
+  }
+  assert.ok(srv.buildOpenWeatherUrl(apiUrl("weather?lat=0&lon=0")));
+});
+test("configuration rejects unbounded or invalid memory and rate limits", () => {
+  process.env.TEST_SETTING = "NaN";
+  assert.throws(() => srv.envInteger("TEST_SETTING", 2, 1, 10));
+  process.env.TEST_SETTING = "0";
+  assert.throws(() => srv.envInteger("TEST_SETTING", 2, 1, 10));
+  delete process.env.TEST_SETTING;
+  assert.equal(srv.envInteger("TEST_SETTING", 2, 1, 10), 2);
 });

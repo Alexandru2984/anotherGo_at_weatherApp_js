@@ -2,10 +2,7 @@
 // Acest modul gestionează interacțiunile cu API-ul OpenWeatherMap.
 
 import {
-    OPENWEATHER_API_KEY,
     OPENWEATHER_PROXY_BASE_URL,
-    OPENWEATHER_BASE_URL,
-    OPENWEATHER_GEO_URL,
   } from './config.js?v=20260630-1'; // Importă constantele din config.js (sunt în același folder scripts/)
 
   const REQUEST_TIMEOUT_MS = 8000;
@@ -67,18 +64,7 @@ import {
   function buildOpenWeatherUrl(path, params) {
     const sanitizedParams = new URLSearchParams(params);
 
-    if (OPENWEATHER_PROXY_BASE_URL) {
-      return `${OPENWEATHER_PROXY_BASE_URL}/${path}?${sanitizedParams.toString()}`;
-    }
-
-    if (!OPENWEATHER_API_KEY) {
-      throw new Error('Cheia API OpenWeatherMap lipsește sau proxy-ul nu este configurat.');
-    }
-
-    sanitizedParams.set('appid', OPENWEATHER_API_KEY);
-    const baseUrl = path === 'geo/direct' ? OPENWEATHER_GEO_URL : OPENWEATHER_BASE_URL;
-    const upstreamPath = path === 'geo/direct' ? 'direct' : path;
-    return `${baseUrl}/${upstreamPath}?${sanitizedParams.toString()}`;
+    return `${OPENWEATHER_PROXY_BASE_URL}/${path}?${sanitizedParams.toString()}`;
   }
 
   async function resolveCoordinates({ city, lat, lon }) {
