@@ -12,7 +12,10 @@ async function check(path, name, validate, statuses = [200], method = 'GET') {
 await check('/', 'home and security headers', async response => {
   assert.ok(response.headers.get('content-security-policy')?.includes("script-src 'self'"));
   assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
-  assert.ok((await response.text()).includes('id="main-content"'));
+  const html = await response.text();
+  assert.ok(html.includes('id="main-content"'));
+  assert.ok(response.headers.get('cache-control')?.includes('no-transform'));
+  assert.ok(!html.includes('static.cloudflareinsights.com/beacon.min.js'), 'Unexpected edge script injection');
 });
 await check('/healthz', 'health', async response => assert.equal((await response.json()).ok, true));
 await check('/manifest.webmanifest', 'manifest', async response => assert.equal((await response.json()).start_url, '/'));

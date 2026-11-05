@@ -1,6 +1,6 @@
-import { weatherIconUrl } from './config.js?v=20261105-4';
-import { groupForecast, summarizeForecast, activitySlots, ACTIVITY_LIMITS, probability, localDateKey } from './forecast.js?v=20261105-4';
-import { storage } from './storage.js?v=20261105-4';
+import { weatherIconUrl } from './config.js?v=20261105-5';
+import { groupForecast, summarizeForecast, activitySlots, ACTIVITY_LIMITS, probability, localDateKey } from './forecast.js?v=20261105-5';
+import { storage } from './storage.js?v=20261105-5';
 const $ = selector => document.querySelector(selector);
 const make = (tag, className, text) => { const element = document.createElement(tag); element.className = className; if (text !== undefined) element.textContent = text; return element; };
 let state;

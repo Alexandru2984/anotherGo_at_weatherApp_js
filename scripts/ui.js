@@ -1,7 +1,7 @@
-import { weatherIconUrl } from './config.js?v=20261105-4';
-import { renderForecast, redrawForecast } from './insights.js?v=20261105-4';
+import { weatherIconUrl } from './config.js?v=20261105-5';
+import { renderForecast, redrawForecast } from './insights.js?v=20261105-5';
 export { redrawForecast };
-import { storage } from './storage.js?v=20261105-4';
+import { storage } from './storage.js?v=20261105-5';
 // scripts/ui.js
 // Acest modul gestionează actualizarea interfeței utilizatorului și traducerile.
 
@@ -643,7 +643,7 @@ const UI_elements = {
         suggestion.name,
         suggestion.state,
         suggestion.country,
-      ].filter(Boolean).join(", ");
+      ].filter(Boolean).join(", ").slice(0, 80);
       datalist.appendChild(option);
     });
   }

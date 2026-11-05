@@ -282,7 +282,7 @@ function serveStatic(req, res, url) {
   setSecurityHeaders(res);
   if (path === '/index.html' && ['lat', 'lon', 'city'].some(key => url.searchParams.has(key))) res.setHeader('X-Robots-Tag', 'noindex, follow');
   const etag = `W/"${stat.size.toString(16)}-${stat.mtimeMs.toString(16)}"`;
-  const headers = { 'Content-Type': mimeTypes[extname(file)] || 'application/octet-stream', 'Cache-Control': 'public, max-age=0, must-revalidate', ETag: etag };
+  const headers = { 'Content-Type': mimeTypes[extname(file)] || 'application/octet-stream', 'Cache-Control': `public, max-age=0, must-revalidate${extname(file) === '.html' ? ', no-transform' : ''}`, ETag: etag };
   if (req.headers['if-none-match'] === etag) { res.writeHead(304, headers); return res.end(); }
   res.writeHead(200, { ...headers, 'Content-Length': stat.size });
   if (req.method === 'HEAD') return res.end();

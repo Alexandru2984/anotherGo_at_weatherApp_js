@@ -1,8 +1,8 @@
-import { DEFAULT_UNIT, MAX_FAVORITE_CITIES, MAX_RECENT_SEARCHES, STORAGE_KEYS } from './config.js?v=20261105-4';
-import { storage, readJson } from './storage.js?v=20261105-4';
-import * as ui from './ui.js?v=20261105-4';
-import { getUserLocation } from './utils.js?v=20261105-4';
-import * as api from './api.js?v=20261105-4';
+import { DEFAULT_UNIT, MAX_FAVORITE_CITIES, MAX_RECENT_SEARCHES, STORAGE_KEYS } from './config.js?v=20261105-5';
+import { storage, readJson } from './storage.js?v=20261105-5';
+import * as ui from './ui.js?v=20261105-5';
+import { getUserLocation } from './utils.js?v=20261105-5';
+import * as api from './api.js?v=20261105-5';
 
 const $ = selector => document.querySelector(selector);
 let units = storage.getItem(STORAGE_KEYS.TEMPERATURE_UNIT) === 'imperial' ? 'imperial' : DEFAULT_UNIT;
@@ -34,6 +34,8 @@ function updateLists() {
   ui.updateFavoriteCitiesList(favorites, displayWeather, location => { favorites = favorites.filter(item => locationKey(item) !== locationKey(location)); saveLists(); });
   const saved = current && favorites.some(item => locationKey(item) === locationKey(current));
   $('#save-favorite').setAttribute('aria-pressed', String(Boolean(saved)));
+  $('#save-favorite').classList.toggle('is-active', Boolean(saved));
+  $('#save-favorite').title = ui.t(saved ? 'removeFavorite' : 'saveFavorite');
   $('#save-favorite span').textContent = ui.t(saved ? 'removeFavorite' : 'saveFavorite');
 }
 function saveLists() {
@@ -150,7 +152,7 @@ $('#search-form').addEventListener('submit', event => {
   event.preventDefault();
   const text = cleanName($('#city-input').value);
   if (!text) return ui.showError('enterCityNameError');
-  const selected = suggestions.find(item => [item.name, item.state, item.country].filter(Boolean).join(', ') === text);
+  const selected = suggestions.find(item => cleanName([item.name, item.state, item.country].filter(Boolean).join(', ')) === text);
   displayWeather(selected || { city: text });
 });
 $('#city-input').addEventListener('input', () => {

@@ -36,3 +36,15 @@ test('null and absent coordinates cannot become zero', () => {
   assert.equal(validCoordinates(undefined, 26), false);
   assert.equal(validCoordinates(0, 0), true);
 });
+
+test('storage quota failures keep the latest session value and honor removals', () => {
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
+    getItem: () => 'old', setItem: () => { throw new Error('QuotaExceeded'); }, removeItem: () => { throw new Error('Denied'); },
+  } });
+  assert.equal(storage.getItem('quota-test'), 'old');
+  storage.setItem('quota-test', 'new');
+  assert.equal(storage.getItem('quota-test'), 'new');
+  storage.removeItem('quota-test');
+  assert.equal(storage.getItem('quota-test'), null);
+  delete globalThis.localStorage;
+});

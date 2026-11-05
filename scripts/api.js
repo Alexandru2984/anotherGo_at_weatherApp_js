@@ -1,4 +1,4 @@
-import { OPENWEATHER_PROXY_BASE_URL } from './config.js?v=20261105-4';
+import { OPENWEATHER_PROXY_BASE_URL } from './config.js?v=20261105-5';
 
 export class WeatherError extends Error {
   constructor(code, status = 0) { super(code); this.name = 'WeatherError'; this.code = code; this.status = status; }

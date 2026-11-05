@@ -2,15 +2,16 @@
 const volatile = new Map();
 export const storage = {
   getItem(key) {
-    try { return localStorage.getItem(key) ?? volatile.get(key) ?? null; }
-    catch { return volatile.get(key) ?? null; }
+    if (volatile.has(key)) return volatile.get(key);
+    try { return localStorage.getItem(key); }
+    catch { return null; }
   },
   setItem(key, value) {
     volatile.set(key, String(value));
     try { localStorage.setItem(key, String(value)); } catch { /* Session-only fallback. */ }
   },
   removeItem(key) {
-    volatile.delete(key);
+    volatile.set(key, null);
     try { localStorage.removeItem(key); } catch { /* Storage unavailable. */ }
   },
 };

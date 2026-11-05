@@ -1,5 +1,5 @@
-const CACHE_NAME = 'weather-app-v14';
-const VERSION = '20261105-4';
+const CACHE_NAME = 'weather-app-v15';
+const VERSION = '20261105-5';
 const APP_SHELL = ['/', '/index.html', '/offline.html', '/manifest.webmanifest', '/favicon.ico', ...['01', '02', '03', '04', '09', '10', '11', '13', '50'].flatMap(code => ['d', 'n'].map(period => `/icons/weather/${code}${period}.svg`)), '/fonts/fa-solid-900.woff2', `/styles/icons.css?v=${VERSION}`, '/icons/icon.svg', '/icons/favicon-32.png', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/maskable-512.png', '/icons/apple-touch-icon.png', ...['api', 'app', 'config', 'theme', 'ui', 'utils', 'storage', 'forecast', 'insights'].map(name => `/scripts/${name}.js?v=${VERSION}`), `/styles/styles.css?v=${VERSION}`];
 const shellUrls = new Set(APP_SHELL.map(path => new URL(path, self.location.origin).href));
 self.addEventListener('install', event => {

@@ -39,6 +39,7 @@ test('HTTP boundary blocks repository files, traversal and unsupported methods',
   assert.equal(home.status, 200);
   assert.ok(home.headers['content-security-policy'].includes("object-src 'none'"));
   assert.equal(home.headers['x-content-type-options'], 'nosniff');
+  assert.ok(home.headers['cache-control'].includes('no-transform'));
   assert.equal((await http('/', { method: 'HEAD' })).body, '');
   assert.equal((await http('/', { headers: { 'If-None-Match': home.headers.etag } })).status, 304);
 });

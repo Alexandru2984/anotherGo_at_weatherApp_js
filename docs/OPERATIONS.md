@@ -92,3 +92,13 @@ SVG se pot reconstrui cu `node scripts/build-weather-icons.js`; imaginea social�
 cu `node scripts/create-social-preview.js` (necesită dependențele dev și Chromium).
 Actualizează `lastmod` din sitemap la o schimbare reală de conținut. Adaugă
 sitemapul în Search Console din contul operatorului; repo-ul nu are acces acolo.
+
+Paginile HTML trimit `Cache-Control: public, max-age=0, must-revalidate,
+no-transform`. Cloudflare respectă această directivă pentru injecțiile automate
+Web Analytics și JavaScript Detections. Astfel CSP poate rămâne strictă, fără
+scripturi inline sau terțe. Acest lucru nu modifică setările globale Cloudflare;
+semnalul JavaScript Detections poate lipsi pentru paginile acestui domeniu. Codul
+și cache-ul API au în continuare protecțiile proprii. Comprimarea trebuie făcută
+la origine dacă este dorită pentru HTML, deoarece Cloudflare nu transformă corpul.
+Referințe: [Cloudflare cache directives](https://developers.cloudflare.com/cache/concepts/cache-control/),
+[Cloudflare Web Analytics](https://developers.cloudflare.com/web-analytics/faq/).
