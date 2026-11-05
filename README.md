@@ -187,7 +187,7 @@ oricine poate citi commit-urile vechi. Pași recomandați:
    ```bash
    # cu git-filter-repo (recomandat)
    pip install git-filter-repo
-   git filter-repo --replace-text <(echo '6b2c5016bd4466b4560d915499569169==>REDACTED')
+   git filter-repo --replace-text <(echo 'REDACTED_ROTATE_EXPOSED_KEY==>REDACTED')
    git push --force --all      # rescrie istoricul remote
    ```
 

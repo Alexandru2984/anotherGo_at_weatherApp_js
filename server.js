@@ -40,7 +40,7 @@ const staleTtls = {
 
 // Server-side files that live in the project root but must never be served as
 // static assets, even when the static server runs from the repo directory.
-const blockedStaticPaths = /^\/(server\.js|package(-lock)?\.json|scripts\/smoke-test\.js|test\/|tests\/|deploy\/|\.github\/)/;
+const blockedStaticPaths = /^\/(server\.js|package(-lock)?\.json|scripts\/smoke-test\.js|README\.md|docs\/|test\/|tests\/|deploy\/|\.github\/)/;
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
