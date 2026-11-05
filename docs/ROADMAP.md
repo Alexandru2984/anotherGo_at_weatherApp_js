@@ -18,6 +18,7 @@ separat, teste proporționale și validare prin originea nginx înainte de înch
 - [x] Erori sigure, răspunsuri limitate și cache stale etichetat.
 - [x] Un singur traseu nginx → Node, fără copii publice ale repo-ului.
 - [x] Loguri fără coordonate/query și restart verificat al serviciului propriu.
+- [x] Utilizator dinamic dedicat, blocare socket Docker și release-uri separate de repo.
 
 ## 3. Corectitudinea aplicației
 
@@ -61,5 +62,5 @@ personale. Nu se afișează indicatori pe care API-ul actual nu îi furnizează.
 Testele de browser folosesc Chromium pentru desktop și emulare mobilă, fără a
 pretinde verificare pe Safari/iOS sau Firefox reale. CI este configurat și
 verificat local prin aceleași comenzi; rularea GitHub Actions necesită publicarea
-commitului pe remote. Monitorizarea externă, contul dedicat de sistem și rotirea
-cheii rămân în sarcina operatorului.
+commitului pe remote. Monitorizarea externă și rotirea cheii rămân în sarcina operatorului. Serviciul
+rulează acum cu utilizator dinamic dedicat și fără acces la socketul Docker.

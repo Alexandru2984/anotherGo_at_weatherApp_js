@@ -5,8 +5,9 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=micu
-Group=micu
+DynamicUser=true
+User=weather-canary
+Group=weather-canary
 WorkingDirectory=/srv/canary/weather.micutu.com/current
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
@@ -32,6 +33,11 @@ ProtectKernelTunables=true
 ProtectKernelLogs=true
 RestrictSUIDSGID=true
 LockPersonality=true
+RestrictNamespaces=true
+RestrictRealtime=true
+ProtectClock=true
+ProtectHostname=true
+InaccessiblePaths=-/run/docker.sock -/var/run/docker.sock
 CapabilityBoundingSet=
 AmbientCapabilities=
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX

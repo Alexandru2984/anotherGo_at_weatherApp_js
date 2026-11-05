@@ -37,8 +37,10 @@ securitate și nu dovedește absența altor vulnerabilități.
    cache vechi și locație greșită pot produce informații înșelătoare în UI.
 
 Compromiterea procesului ar putea expune cheia, memoria cu cereri meteo și
-fișierele accesibile utilizatorului de sistem `micu`. Acesta este un cont comun
-mai multor proiecte; migrarea la un cont dedicat reduce raza de impact. Nu există
+fișierele accesibile utilizatorului de sistem `micu`. La începutul auditului acesta era un cont comun
+mai multor proiecte. Remedierea finală folosește un utilizator dinamic dedicat,
+fără grup Docker, cu socketul Docker inaccesibil și cu filesystem read-only
+în serviciu; cheia ajunge în proces prin EnvironmentFile citit de systemd. Nu există
 conturi de utilizatori, bază de date sau plăți în această aplicație. Numărul de
 utilizatori afectați și pierderea financiară anuală nu pot fi cuantificate din
 datele disponibile; nu există o estimare ALE credibilă fără trafic/costuri.
@@ -78,3 +80,45 @@ Referințe tehnice: [nginx — moștenirea add_header](https://nginx.org/en/docs
 Verdict: remediere tehnică în etape; **riscul cheii compromise rămâne deschis**,
 acceptat temporar de proprietar. Accesul public prin Cloudflare a răspuns inițial 403 în mediul de audit și ulterior
 200. Verificarea publică finală este consemnată separat mai jos.
+
+
+## Verificare finală — 2026-11-05
+
+Remedierile din tabelul inițial sunt implementate. Singura excepție explicită
+este revocarea/rotirea cheii deja compromise, amânată de proprietar.
+
+- `npm ci --ignore-scripts`: instalare reproductibilă din lockfile.
+- `npm run check`: 24 fișiere JS verificate, toate asseturile publice prezente,
+  versiuni HTML/importuri/worker aliniate, fără cheie sau HTML dinamic nesigur.
+- `npm test`: **31/31** teste trecute, inclusiv buget global upstream, cache în
+  octeți, acces HTTP la fișiere interne, metadate stale și validare coordonate.
+- `npm run test:browser`: **24/24** scenarii desktop/mobil trecute pe Chromium.
+  Offline, storage blocat/corupt/plin, răspuns întârziat, eșec AQI/forecast,
+  revenirea unității la eșec, favorite, share și ștergere date locale acoperite.
+- axe WCAG A/AA pe ecranul meteo și contrast în toate temele; aceasta nu este
+  o certificare WCAG sau o verificare pe dispozitive iOS/Safari reale.
+- Verificare vizuală la **320, 390, 768 și 1440 px**, fără overflow orizontal.
+- Verificare publică reală prin Cloudflare: HTTP 200, căutare București reușită,
+  zero erori JavaScript/CSP și zero cereri către alte origini în sesiunea testată.
+- Smoke local și public: meteo, forecast, AQI, geocodare, manifest, worker, robots,
+  sitemap și iconițe locale reușite; README/server.js 404, coordonate lipsă 400.
+- `nginx -t` reușit; serviciu activ cu `DynamicUser=yes`, utilizator
+  `weather-canary`; acces direct la `.env` și acces de scriere Docker refuzate.
+- nginx păstrează o singură valoare pentru fiecare header nosniff/frame/referrer,
+  fără dubluri backend + proxy. HTML trimite `no-transform` pentru a preveni
+  injecțiile Cloudflare incompatibile cu CSP, conform documentației furnizorului.
+- `npm audit` la instalare: zero vulnerabilități cunoscute raportate pentru
+  pachetele instalate; nu reprezintă dovada absenței tuturor vulnerabilităților.
+- Cheia activă nu apare în fișierele sursă/documentele curente urmărite de Git
+  sau pregătite pentru commit. Rămâne în `.env` și în istoricul deja expus.
+
+Publicarea din commit fix în `releases/<sha>` și activarea atomică prin `current`
+sunt funcționale și verificate prin ID-ul din `/healthz`. Modificările necomise
+ale repo-ului nu schimbă site-ul publicat. Nu s-a forțat un eșec în producție
+pentru exercițiul de rollback automat.
+
+Rămân operaționale: rotirea cheii, configurarea monitorului extern/destinatarului
+alertelor, verificarea setărilor și retenției Cloudflare și publicarea commiturilor
+pe remote pentru a executa GitHub Actions. Nu s-a făcut push sau force-push.
+SEO nu garantează indexarea; paginile individuale de orașe nu sunt implementate.
+Auditul acoperă acest repo, vhostul și serviciul său, nu toate aplicațiile VPS-ului.

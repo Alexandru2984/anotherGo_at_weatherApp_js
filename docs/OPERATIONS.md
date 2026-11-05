@@ -13,8 +13,10 @@ servit. Testele rulează separat pe 18105, fără cheie sau acces la producție.
 
 Procesul este neprivilegiat, cu systemd `ProtectSystem=strict`, capabilități
 eliminate, `NoNewPrivileges`, 256 MiB memorie, 64 taskuri și 1024 descriptori.
-Utilizatorul `micu` este comun altor aplicații; migrarea la un utilizator dedicat
-rămâne o îmbunătățire de izolare a VPS-ului.
+Procesul folosește utilizatorul dinamic dedicat `weather-canary`, cu
+`DynamicUser=true`, fără grupul Docker și fără acces direct la `app/.env` sau
+la socketul Docker. systemd citește EnvironmentFile înainte de schimbarea
+identității. UID-ul se poate schimba după restart; aplicația nu scrie stare pe disc.
 
 ## Publicare obișnuită
 

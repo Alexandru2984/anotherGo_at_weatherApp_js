@@ -71,7 +71,9 @@ test('favorites retain coordinates, preferences translate and failed unit refres
   await expect(page.locator('#temperature')).toHaveText('68');
   await expect(page.locator('#data-status')).toContainText('°F');
   state.failWeather = true;
-  await page.locator('#temp-toggle').uncheck();
+  // The app intentionally restores the checkbox after a failed refresh.
+  // click() permits that immediate rollback; uncheck() asserts the transient state.
+  await page.locator('#temp-toggle').click();
   await expect(page.locator('#error-message')).toBeVisible();
   await expect(page.locator('#temp-toggle')).toBeChecked();
   await expect(page.locator('#temperature')).toHaveText('68');
