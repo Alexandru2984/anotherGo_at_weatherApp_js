@@ -1,4 +1,4 @@
-import { createReadStream, realpathSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { isIP } from 'node:net';
 import { extname, resolve } from 'node:path';
@@ -19,6 +19,8 @@ const host = process.env.HOST || '127.0.0.1';
 const openWeatherApiKey = process.env.OPENWEATHER_API_KEY || '';
 const trustProxy = process.env.TRUST_PROXY === 'true';
 const appVersion = process.env.APP_VERSION || '2.0.0';
+const releaseFile = new URL('.release-id', import.meta.url);
+const releaseId = existsSync(releaseFile) ? readFileSync(releaseFile, 'utf8').trim() : 'dev';
 const apiRateWindowMs = envInteger('RATE_WINDOW_MS', 60_000, 1000, 3_600_000);
 const apiRateLimit = envInteger('RATE_LIMIT', 90, 1, 10_000);
 const maxCacheEntries = envInteger('MAX_CACHE_ENTRIES', 500, 1, 2000);
@@ -26,6 +28,7 @@ const maxRateBuckets = envInteger('MAX_RATE_BUCKETS', 20_000, 1, 100_000);
 const maxInflight = envInteger('MAX_UPSTREAM_CONCURRENCY', 8, 1, 32);
 const upstreamRateLimit = envInteger('UPSTREAM_RATE_LIMIT', 50, 1, 1000);
 const maxPayloadBytes = 512 * 1024;
+const maxCacheBytes = 16 * 1024 * 1024;
 const rateBuckets = new Map();
 const responseCache = new Map();
 const inflightRequests = new Map();
@@ -35,6 +38,7 @@ const staleTtls = { 'geo/direct': 604_800_000, weather: 1_800_000, forecast: 7_2
 
 // Only intentionally published assets. Adding a repository file cannot publish it.
 const publicPaths = new Set([
+  ...['01', '02', '03', '04', '09', '10', '11', '13', '50'].flatMap(code => ['d', 'n'].map(period => `/icons/weather/${code}${period}.svg`)),
   '/index.html', '/offline.html', '/manifest.webmanifest', '/favicon.ico',
   '/sw.js', '/sw-v4.js', '/robots.txt', '/sitemap.xml',
   '/styles/styles.css', '/styles/icons.css', '/fonts/fa-solid-900.woff2',
@@ -42,7 +46,7 @@ const publicPaths = new Set([
   '/scripts/theme.js', '/scripts/utils.js', '/scripts/storage.js', '/scripts/forecast.js',
   '/scripts/insights.js', '/icons/icon.svg', '/icons/favicon-32.png',
   '/icons/apple-touch-icon.png', '/icons/icon-192.png', '/icons/icon-512.png',
-  '/icons/maskable-512.png', '/images/appScreenshot.jpg',
+  '/icons/maskable-512.png', '/images/appScreenshot.jpg', '/images/social-preview.png',
 ]);
 const mimeTypes = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -54,7 +58,7 @@ const mimeTypes = {
 const securityHeaders = {
   'Content-Security-Policy': [
     "default-src 'self'", "script-src 'self'", "style-src 'self'",
-    "font-src 'self'", "img-src 'self' https://openweathermap.org data:",
+    "font-src 'self'", "img-src 'self'",
     "connect-src 'self'", "worker-src 'self'", "manifest-src 'self'", "object-src 'none'",
     "base-uri 'none'", "form-action 'self'", "frame-ancestors 'none'",
   ].join('; '),
@@ -154,10 +158,19 @@ function getCacheKey(url) {
   return `${copy.pathname}?${copy.searchParams}`;
 }
 function setCacheEntry(key, value) {
+  const sizeOf = (key, entry) => Buffer.byteLength(key) + Buffer.byteLength(entry.payload);
+  const bytes = sizeOf(key, value);
+  if (bytes > maxCacheBytes) return;
   responseCache.delete(key);
-  if (responseCache.size >= maxCacheEntries) responseCache.delete(responseCache.keys().next().value);
+  let used = [...responseCache].reduce((total, [entryKey, entry]) => total + sizeOf(entryKey, entry), 0);
+  while (responseCache.size && (responseCache.size >= maxCacheEntries || used + bytes > maxCacheBytes)) {
+    const oldest = responseCache.keys().next().value;
+    used -= sizeOf(oldest, responseCache.get(oldest));
+    responseCache.delete(oldest);
+  }
   responseCache.set(key, value);
 }
+
 function sweepExpired(now = Date.now()) {
   for (const [key, value] of responseCache) if (now >= value.staleUntil) responseCache.delete(key);
   for (const [key, value] of rateBuckets) if (now >= value.resetAt) rateBuckets.delete(key);
@@ -267,6 +280,7 @@ function serveStatic(req, res, url) {
     if (!stat.isFile()) return sendJson(res, 404, { error: 'Not found' });
   } catch { return sendJson(res, 404, { error: 'Not found' }); }
   setSecurityHeaders(res);
+  if (path === '/index.html' && ['lat', 'lon', 'city'].some(key => url.searchParams.has(key))) res.setHeader('X-Robots-Tag', 'noindex, follow');
   const etag = `W/"${stat.size.toString(16)}-${stat.mtimeMs.toString(16)}"`;
   const headers = { 'Content-Type': mimeTypes[extname(file)] || 'application/octet-stream', 'Cache-Control': 'public, max-age=0, must-revalidate', ETag: etag };
   if (req.headers['if-none-match'] === etag) { res.writeHead(304, headers); return res.end(); }
@@ -289,7 +303,7 @@ const server = createServer({ maxHeaderSize: 8192, headersTimeout: 10_000, reque
   }
   if (url.pathname === '/healthz') {
     if (!['GET', 'HEAD'].includes(req.method)) return sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'GET, HEAD' });
-    return sendJson(res, 200, { ok: true, version: appVersion });
+    return sendJson(res, 200, { ok: true, version: appVersion, release: releaseId });
   }
   if (url.pathname.startsWith('/api/')) {
     if (!url.pathname.startsWith('/api/openweather/')) return sendJson(res, 404, { error: 'Not found' });
@@ -321,4 +335,4 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   process.on('SIGTERM', shutdown);
   startServer();
 }
-export { server, startServer, buildOpenWeatherUrl, getCacheKey, getClientIp, normalizeCity, normalizeUnits, normalizeLanguage, isValidLatitude, isValidLongitude, isRateLimited, setCacheEntry, sweepExpired, responseCache, rateBuckets, fetchOpenWeatherPayload, readLimitedJson, envInteger };
+export { server, startServer, buildOpenWeatherUrl, getCacheKey, getClientIp, normalizeCity, normalizeUnits, normalizeLanguage, isValidLatitude, isValidLongitude, isRateLimited, setCacheEntry, sweepExpired, responseCache, rateBuckets, fetchOpenWeatherPayload, readLimitedJson, envInteger, publicPaths };

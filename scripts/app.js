@@ -1,8 +1,8 @@
-import { DEFAULT_UNIT, MAX_FAVORITE_CITIES, MAX_RECENT_SEARCHES, STORAGE_KEYS } from './config.js?v=20261105-3';
-import { storage, readJson } from './storage.js?v=20261105-3';
-import * as ui from './ui.js?v=20261105-3';
-import { getUserLocation } from './utils.js?v=20261105-3';
-import * as api from './api.js?v=20261105-3';
+import { DEFAULT_UNIT, MAX_FAVORITE_CITIES, MAX_RECENT_SEARCHES, STORAGE_KEYS } from './config.js?v=20261105-4';
+import { storage, readJson } from './storage.js?v=20261105-4';
+import * as ui from './ui.js?v=20261105-4';
+import { getUserLocation } from './utils.js?v=20261105-4';
+import * as api from './api.js?v=20261105-4';
 
 const $ = selector => document.querySelector(selector);
 let units = storage.getItem(STORAGE_KEYS.TEMPERATURE_UNIT) === 'imperial' ? 'imperial' : DEFAULT_UNIT;
@@ -60,7 +60,9 @@ function snapshotMatches(snapshot, location) {
   if (!location) return true;
   const weather = snapshot.data.weather;
   if (api.validCoordinates(location.lat, location.lon)) return Math.abs(weather.coord.lat - location.lat) < 0.02 && Math.abs(weather.coord.lon - location.lon) < 0.02;
-  return cleanName(weather.name).toLocaleLowerCase() === cleanName(location.city || location.name).toLocaleLowerCase();
+  const normalize = value => cleanName(value).normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase();
+  const query = normalize(location.city || location.name);
+  return normalize(weather.name) === query || (typeof snapshot.request?.city === 'string' && normalize(snapshot.request.city) === query);
 }
 function render(snapshot, saved = false) {
   rendered = snapshot;
@@ -82,7 +84,7 @@ async function displayWeather(location) {
   try {
     const data = await api.fetchWeatherAndForecast({ ...requestFor(location), units: requestedUnits, lang: requestedLanguage, signal: controller.signal });
     if (sequence !== intent) return;
-    const snapshot = { data, units: requestedUnits, language: requestedLanguage, savedAt: Date.now() };
+    const snapshot = { data, request: requestFor(location), units: requestedUnits, language: requestedLanguage, savedAt: Date.now() };
     render(snapshot);
     recent = [current, ...recent.filter(item => locationKey(item) !== locationKey(current))].slice(0, MAX_RECENT_SEARCHES);
     saveLists();

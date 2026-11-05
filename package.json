@@ -6,9 +6,15 @@
   "scripts": {
     "start": "node --env-file-if-exists=.env server.js",
     "test": "node --test test/*.test.js",
-    "smoke": "node scripts/smoke-test.js"
+    "smoke": "node scripts/smoke-test.js",
+    "test:browser": "playwright test",
+    "check": "node scripts/check.js"
   },
   "engines": {
     "node": ">=24"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.60.0"
   }
 }

@@ -1,5 +1,6 @@
-import { groupForecast, summarizeForecast, activitySlots, ACTIVITY_LIMITS, probability, localDateKey } from './forecast.js?v=20261105-3';
-import { storage } from './storage.js?v=20261105-3';
+import { weatherIconUrl } from './config.js?v=20261105-4';
+import { groupForecast, summarizeForecast, activitySlots, ACTIVITY_LIMITS, probability, localDateKey } from './forecast.js?v=20261105-4';
+import { storage } from './storage.js?v=20261105-4';
 const $ = selector => document.querySelector(selector);
 const make = (tag, className, text) => { const element = document.createElement(tag); element.className = className; if (text !== undefined) element.textContent = text; return element; };
 let state;
@@ -15,7 +16,7 @@ function format(timestamp, date = false) {
 }
 function icon(item, className) {
   const image = make('img', className);
-  image.src = `https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`;
+  image.src = weatherIconUrl(item.weather[0].icon);
   image.alt = item.weather[0].description || '';
   image.width = 48; image.height = 48; image.loading = 'lazy';
   return image;

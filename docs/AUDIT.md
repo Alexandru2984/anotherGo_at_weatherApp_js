@@ -62,8 +62,8 @@ datele disponibile; nu există o estimare ALE credibilă fără trafic/costuri.
 
 ## Date și furnizori
 
-Orașele, coordonatele cerute și IP-ul de rețea sunt vizibile infrastructurii și
-furnizorului meteo; favoritele și ultimul snapshot se păstrează local în browser.
+Orașele și coordonatele cerute ajung la furnizorul meteo prin proxy; acesta
+vede IP-ul VPS-ului, iar Cloudflare/nginx procesează IP-ul vizitatorului; favoritele și ultimul snapshot se păstrează local în browser.
 OpenWeather, Cloudflare și eventual analytics configurat de proprietar sunt în
 aria evaluării; contractele/DPA, politica de retenție Cloudflare și setările
 conturilor nu au fost accesibile acestui audit. Nu s-au introdus furnizori noi.
@@ -76,5 +76,5 @@ Referințe tehnice: [nginx — moștenirea add_header](https://nginx.org/en/docs
 [W3C Fetch Metadata](https://www.w3.org/TR/fetch-metadata/).
 
 Verdict: remediere tehnică în etape; **riscul cheii compromise rămâne deschis**,
-acceptat temporar de proprietar. Accesul public prin Cloudflare a răspuns 403
-în mediul de audit; verificările de origine nu confirmă automat accesul public.
+acceptat temporar de proprietar. Accesul public prin Cloudflare a răspuns inițial 403 în mediul de audit și ulterior
+200. Verificarea publică finală este consemnată separat mai jos.

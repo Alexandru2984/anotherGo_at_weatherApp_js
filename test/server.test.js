@@ -127,3 +127,15 @@ test("configuration rejects unbounded or invalid memory and rate limits", () => 
   delete process.env.TEST_SETTING;
   assert.equal(srv.envInteger("TEST_SETTING", 2, 1, 10), 2);
 });
+
+test('cache byte budget evicts large entries even below the entry count cap', () => {
+  srv.responseCache.clear();
+  const entry = { payload: 'x'.repeat(10 * 1024 * 1024), expiresAt: Date.now() + 1000, staleUntil: Date.now() + 1000 };
+  srv.setCacheEntry('large-a', entry);
+  srv.setCacheEntry('large-b', entry);
+  assert.equal(srv.responseCache.size, 1);
+  assert.ok(srv.responseCache.has('large-b'));
+  srv.setCacheEntry('too-large', { ...entry, payload: 'x'.repeat(17 * 1024 * 1024) });
+  assert.ok(!srv.responseCache.has('too-large'));
+  srv.responseCache.clear();
+});

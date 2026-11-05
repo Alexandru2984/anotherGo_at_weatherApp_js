@@ -16,3 +16,7 @@ export const STORAGE_KEYS = {
     LANGUAGE: "language", // Adăugat: Cheie pentru stocarea limbii selectate
     LAST_WEATHER: "lastWeatherSnapshot" // Ultima vreme afișată, pentru offline-first
 };
+
+export function weatherIconUrl(code) {
+    return /^(?:0[1-4]|09|10|11|13|50)[dn]$/.test(code) ? `/icons/weather/${code}.svg` : '/icons/icon.svg';
+}

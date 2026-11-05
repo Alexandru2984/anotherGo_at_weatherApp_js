@@ -1,15 +1,17 @@
 {
   "name": "Vremea",
   "short_name": "Vremea",
-  "description": "Aplicație meteo cu prognoză, favorite și linkuri rapide.",
+  "description": "Prognoză pe 5 zile, grafice interactive și planificator de activități.",
   "lang": "ro",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#212121",
-  "theme_color": "#212121",
-  "categories": ["weather", "utilities"],
+  "background_color": "#1b1b1f",
+  "theme_color": "#1b1b1f",
+  "categories": [
+    "weather",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "/icons/icon.svg",
@@ -35,12 +37,5 @@
       "purpose": "maskable"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/images/appScreenshot.jpg",
-      "sizes": "512x512",
-      "type": "image/jpeg",
-      "label": "Vremea curentă și prognoză"
-    }
-  ]
+  "id": "/"
 }

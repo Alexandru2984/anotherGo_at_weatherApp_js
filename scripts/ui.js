@@ -1,6 +1,7 @@
-import { renderForecast, redrawForecast } from './insights.js?v=20261105-3';
+import { weatherIconUrl } from './config.js?v=20261105-4';
+import { renderForecast, redrawForecast } from './insights.js?v=20261105-4';
 export { redrawForecast };
-import { storage } from './storage.js?v=20261105-3';
+import { storage } from './storage.js?v=20261105-4';
 // scripts/ui.js
 // Acest modul gestionează actualizarea interfeței utilizatorului și traducerile.
 
@@ -380,7 +381,7 @@ const UI_elements = {
     UI_elements.dateTime.textContent = formatDateTime(weather.dt, weather.timezone);
     UI_elements.temperature.textContent = Math.round(weather.main.temp);
     UI_elements.feelsLike.textContent = Math.round(weather.main.feels_like);
-    UI_elements.weatherIcon.src = `https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`;
+    UI_elements.weatherIcon.src = weatherIconUrl(weather.weather[0].icon);
     // Descrierea vremii vine direct de la API și este deja tradusă dacă ai trimis lang-ul în API call
     UI_elements.description.textContent = weather.weather[0].description;
     UI_elements.humidity.textContent = weather.main.humidity;
@@ -682,6 +683,9 @@ const UI_elements = {
    */
   export function applyStaticUITranslations(lang) {
     document.documentElement.lang = lang === 'en' ? 'en' : 'ro';
+    document.querySelectorAll('[data-i18n-aria]').forEach(element => { element.setAttribute('aria-label', t(element.dataset.i18nAria)); });
+    document.title = t('siteHeading');
+    document.querySelector('meta[name=description]').content = t('siteDescription');
     document.querySelectorAll('[data-i18n]').forEach(element => {
       const text = (TRANSLATIONS[lang] || TRANSLATIONS.ro)[element.dataset.i18n];
       if (text) element.textContent = text;
@@ -912,4 +916,15 @@ Object.assign(TRANSLATIONS.en, {
   noActivitySlots: 'No available forecast intervals meet these criteria.',
   plannerNote: 'Estimated intervals, not guarantees. Check the forecast before leaving. Thunderstorms and snow are excluded; wind includes available gusts.',
   navToday: 'Now', navForecast: 'Forecast', navPlanner: 'Planner', skipToContent: 'Skip to content',
+});
+
+Object.assign(TRANSLATIONS.ro, {
+  siteHeading: 'Vremea — prognoză meteo și planificator de activități',
+  siteDescription: 'Vremea curentă, prognoză pe 5 zile și grafice interactive. Explorează calitatea aerului și găsește intervale potrivite pentru plimbare, alergare sau ciclism.',
+  unitToggle: 'Comută între Celsius și Fahrenheit', selectLanguage: 'Selectează limba', selectTheme: 'Selectează tema', search: 'Caută', navigation: 'Navigare', forecastDays: 'Zilele prognozei', chartMetric: 'Indicator grafic',
+});
+Object.assign(TRANSLATIONS.en, {
+  siteHeading: 'Vremea — weather forecast and activity planner',
+  siteDescription: 'Current weather, a five-day forecast and interactive charts. Explore air quality and find suitable times for walking, running or cycling.',
+  unitToggle: 'Switch between Celsius and Fahrenheit', selectLanguage: 'Select language', selectTheme: 'Select theme', search: 'Search', navigation: 'Navigation', forecastDays: 'Forecast days', chartMetric: 'Chart metric',
 });

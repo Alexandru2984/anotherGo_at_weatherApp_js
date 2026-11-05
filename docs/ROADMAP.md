@@ -13,39 +13,39 @@ separat, teste proporționale și validare prin originea nginx înainte de înch
 
 ## 2. Server și deploy
 
-- [ ] Allowlist de fișiere publice, blocare symlink-uri/private paths.
-- [ ] Validare strictă, IP-uri de încredere, buget upstream global și timeouturi.
-- [ ] Erori sigure, răspunsuri limitate și cache stale etichetat.
-- [ ] Un singur traseu nginx → Node, fără copii publice ale repo-ului.
-- [ ] Loguri fără coordonate/query și restart verificat al serviciului propriu.
+- [x] Allowlist de fișiere publice, blocare symlink-uri/private paths.
+- [x] Validare strictă, IP-uri de încredere, buget upstream global și timeouturi.
+- [x] Erori sigure, răspunsuri limitate și cache stale etichetat.
+- [x] Un singur traseu nginx → Node, fără copii publice ale repo-ului.
+- [x] Loguri fără coordonate/query și restart verificat al serviciului propriu.
 
 ## 3. Corectitudinea aplicației
 
-- [ ] Anularea cererilor depășite, AQI opțional, mesaje utile de eroare.
-- [ ] Storage indisponibil/corupt, snapshot validat și starea offline vizibilă.
-- [ ] Favorite și partajare care păstrează coordonatele orașului ales.
-- [ ] Fără solicitare automată de geolocalizare la prima vizită.
-- [ ] Worker cu cache finit și shell complet utilizabil offline.
+- [x] Anularea cererilor depășite, AQI opțional, mesaje utile de eroare.
+- [x] Storage indisponibil/corupt, snapshot validat și starea offline vizibilă.
+- [x] Favorite și partajare care păstrează coordonatele orașului ales.
+- [x] Fără solicitare automată de geolocalizare la prima vizită.
+- [x] Worker cu cache finit și shell complet utilizabil offline.
 
 ## 4. Experiență și funcții interactive
 
-- [ ] Dashboard responsive cu antet, onboarding și scurtături către orașe.
-- [ ] Prognoză zilnică agregată în fusul orașului: min/max, ploaie și vânt.
-- [ ] Selectarea zilei pentru intervalele de 3 ore și grafic.
-- [ ] Grafic comutabil temperatură / probabilitate ploaie / vânt.
-- [ ] Planificator pentru plimbare, alergare, ciclism: intervale potrivite,
+- [x] Dashboard responsive cu antet, onboarding și scurtături către orașe.
+- [x] Prognoză zilnică agregată în fusul orașului: min/max, ploaie și vânt.
+- [x] Selectarea zilei pentru intervalele de 3 ore și grafic.
+- [x] Grafic comutabil temperatură / probabilitate ploaie / vânt.
+- [x] Planificator pentru plimbare, alergare, ciclism: intervale potrivite,
   criterii explicite, fără a le prezenta ca avertizări oficiale sau garanții.
-- [ ] Rezumat următoarele 24 h: variație temperatură, precipitații, vânt.
-- [ ] Stare conexiune, vechime date, reîncercare și ștergere date locale.
-- [ ] Interfață RO/EN, tastatură, focus, reduced motion și verificare mobil.
+- [x] Rezumat următoarele 24 h: variație temperatură, precipitații, vânt.
+- [x] Stare conexiune, vechime date, reîncercare și ștergere date locale.
+- [x] Interfață RO/EN, tastatură, focus, reduced motion și verificare mobil.
 
 ## 5. La final: SEO și CI
 
-- [ ] Titlu/descriere, canonical, Open Graph, robots și sitemap.
-- [ ] Teste de integrare HTTP cu upstream simulat, fără chei reale.
-- [ ] Teste browser cu date deterministe, inclusiv mobil/offline/race conditions.
-- [ ] CI cu permisiuni minime, verificări de sintaxă, Node LTS și browser.
-- [ ] Documentație de rulare, smoke și limite cunoscute.
+- [x] Titlu/descriere, canonical, Open Graph, robots și sitemap.
+- [x] Teste de integrare HTTP cu upstream simulat, fără chei reale.
+- [x] Teste browser cu date deterministe, inclusiv mobil/offline/race conditions.
+- [x] CI cu permisiuni minime, verificări de sintaxă, Node LTS și browser.
+- [x] Documentație de rulare, smoke și limite cunoscute.
 
 ## Extensii ulterioare, care cer date sau infrastructură suplimentară
 
@@ -55,3 +55,11 @@ alerte oficiale CAP, UV/polen și prognoză 7–14 zile numai cu API compatibil,
 notificări push opt-in cu backend și dezabonare. Conturile și sincronizarea
 favoritelor se justifică numai dacă există cerere; adaugă cost de operare și date
 personale. Nu se afișează indicatori pe care API-ul actual nu îi furnizează.
+
+## Limitări de verificare
+
+Testele de browser folosesc Chromium pentru desktop și emulare mobilă, fără a
+pretinde verificare pe Safari/iOS sau Firefox reale. CI este configurat și
+verificat local prin aceleași comenzi; rularea GitHub Actions necesită publicarea
+commitului pe remote. Monitorizarea externă, contul dedicat de sistem și rotirea
+cheii rămân în sarcina operatorului.

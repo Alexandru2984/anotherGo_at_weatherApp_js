@@ -7,7 +7,7 @@ Wants=network-online.target
 Type=simple
 User=micu
 Group=micu
-WorkingDirectory=/srv/canary/weather.micutu.com/app
+WorkingDirectory=/srv/canary/weather.micutu.com/current
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=8105

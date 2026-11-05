@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fetchWeatherAndForecast, validCoordinates } from '../scripts/api.js?v=20261105-2';
-import { storage, readJson } from '../scripts/storage.js?v=20261105-2';
+import { fetchWeatherAndForecast, validCoordinates } from '../scripts/api.js';
+import { storage, readJson } from '../scripts/storage.js';
 const current = { name: 'Test', dt: 1, timezone: 0, coord: { lat: 44, lon: 26 }, main: { temp: 10, feels_like: 9, humidity: 70, pressure: 1010 }, wind: { speed: 2 }, weather: [{ icon: '01d' }] };
 test('browser storage works when localStorage is unavailable and discards corrupt JSON', () => {
   Object.defineProperty(globalThis, 'localStorage', { configurable: true, get() { throw new Error('Denied'); } });

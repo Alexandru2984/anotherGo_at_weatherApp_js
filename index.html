@@ -5,12 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' https://openweathermap.org data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="theme-color" content="#212121" />
-    <title>Vremea</title>
+    <title>Vremea — prognoză meteo și planificator de activități</title>
     <link rel="manifest" href="manifest.webmanifest" />
+
+    <link rel="canonical" href="https://weather.micutu.com/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ro_RO" />
+    <meta property="og:locale:alternate" content="en_GB" />
+    <meta property="og:site_name" content="Vremea" />
+    <meta property="og:title" content="Vremea — explorează prognoza, găsește-ți momentul" />
+    <meta property="og:description" content="Prognoză pe 5 zile, grafice interactive și planificator de activități. Pe mobil și desktop, fără cont." />
+    <meta property="og:url" content="https://weather.micutu.com/" />
+    <meta property="og:image" content="https://weather.micutu.com/images/social-preview.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Vremea: prognoză pe 5 zile, grafice și planificator de activități" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="apple-mobile-web-app-title" content="Vremea" />
 
     <!-- Icons / favicons -->
     <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
@@ -18,21 +34,22 @@
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="color-scheme" content="dark light" />
-    <meta name="description" content="Aplicație meteo: vremea curentă, prognoză pe 5 zile, calitatea aerului, favorite și teme." />
+    <meta name="description" content="Vremea curentă, prognoză pe 5 zile și grafice interactive. Explorează calitatea aerului și găsește intervale potrivite pentru plimbare, alergare sau ciclism." />
 
-    <link rel="stylesheet" href="styles/icons.css?v=20261105-3" />
+    <link rel="stylesheet" href="styles/icons.css?v=20261105-4" />
     <!-- Fisierele CSS și JavaScript ale aplicației noastre, cu căile corecte -->
-    <link rel="stylesheet" href="styles/styles.css?v=20261105-3" />
-    <script src="scripts/theme.js?v=20261105-3"></script>
-    <script type="module" src="scripts/app.js?v=20261105-3" defer></script>
+    <link rel="stylesheet" href="styles/styles.css?v=20261105-4" />
+    <script src="scripts/theme.js?v=20261105-4"></script>
+    <script type="module" src="scripts/app.js?v=20261105-4" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content" data-i18n="skipToContent">Sari la conținut</a>
     <div class="container">
-      <header class="app-header"><a class="brand" href="/" aria-label="Vremea"><img src="/icons/icon.svg" width="36" height="36" alt="" /> Vremea<span class="brand-dot">.</span></a><nav class="header-nav" aria-label="Navigare"><a href="#weather-info" data-i18n="navToday">Acum</a><a href="#forecast-section" data-i18n="navForecast">Prognoză</a><a href="#planner-section" data-i18n="navPlanner">Planificator</a></nav><span id="connection-status" class="connection-status" role="status"></span></header>
+      <header class="app-header"><a class="brand" href="/" aria-label="Vremea"><img src="/icons/icon.svg" width="36" height="36" alt="" /> Vremea<span class="brand-dot">.</span></a><nav class="header-nav" aria-label="Navigare" data-i18n-aria="navigation"><a href="#weather-info" data-i18n="navToday">Acum</a><a href="#forecast-section" data-i18n="navForecast">Prognoză</a><a href="#planner-section" data-i18n="navPlanner">Planificator</a></nav><span id="connection-status" class="connection-status" role="status"></span></header>
       <main id="main-content">
+        <h1 class="sr-only" data-i18n="siteHeading">Vremea — prognoză meteo și planificator de activități</h1>
         <section id="welcome" class="card welcome">
-          <h1 data-i18n="welcomeTitle">Vremea, pe înțelesul tău.</h1>
+          <h2 data-i18n="welcomeTitle">Vremea, pe înțelesul tău.</h2>
           <p data-i18n="welcomeText">Caută un oraș și explorează următoarele zile. Locația ta este folosită doar când o ceri.</p>
           <div class="quick-cities"><button type="button" class="btn btn-small btn-ghost" data-city="București,RO">București</button><button type="button" class="btn btn-small btn-ghost" data-city="Cluj-Napoca,RO">Cluj-Napoca</button><button type="button" class="btn btn-small btn-ghost" data-city="London,GB">London</button></div>
         </section>
@@ -45,14 +62,14 @@
               title="Folosiți locația curentă"
               data-i18n-title="useCurrentLocation"
             >
-              <i class="fas fa-location-arrow"></i>
+              <i aria-hidden="true" class="fas fa-location-arrow"></i>
               <span data-i18n="currentLocation">Locația Curentă</span>
             </button>
 
             <div class="unit-toggle">
               <span data-i18n="celsiusSymbol">°C</span>
               <label class="switch">
-                <input type="checkbox" id="temp-toggle" aria-label="Comută între Celsius și Fahrenheit" />
+                <input type="checkbox" id="temp-toggle" aria-label="Comută între Celsius și Fahrenheit" data-i18n-aria="unitToggle" />
                 <span class="slider round"></span>
               </label>
               <span data-i18n="fahrenheitSymbol" id="display-unit">°F</span>
@@ -60,7 +77,7 @@
 
             <!-- Selector de limbă adăugat aici -->
             <div class="lang-selector">
-                <select id="lang-select" aria-label="Select language">
+                <select id="lang-select" aria-label="Selectează limba" data-i18n-aria="selectLanguage">
                     <option value="ro">Română</option>
                     <option value="en">English</option>
                     <!-- Poți adăuga mai multe opțiuni de limbă aici -->
@@ -68,7 +85,7 @@
             </div>
 
             <div class="theme-selector">
-              <select id="theme-select" aria-label="Select theme">
+              <select id="theme-select" aria-label="Selectează tema" data-i18n-aria="selectTheme">
                 <option value="auto" data-i18n="themeAuto">Sistem</option>
                 <option value="dark" data-i18n="themeDark">Dark</option>
                 <option value="light" data-i18n="themeLight">Light</option>
@@ -94,8 +111,8 @@
               aria-label="Introduceți numele orașului"
             />
             <datalist id="city-suggestions"></datalist>
-            <button class="btn" type="submit" aria-label="Caută">
-              <i class="fas fa-search" aria-hidden="true"></i>
+            <button class="btn" type="submit" aria-label="Caută" data-i18n-aria="search">
+              <i aria-hidden="true" class="fas fa-search"></i>
             </button>
           </form>
         </section>
@@ -133,7 +150,7 @@
               title="Salvează la favorite"
               data-i18n-title="saveFavorite"
             >
-              <i class="fas fa-star"></i>
+              <i aria-hidden="true" class="fas fa-star"></i>
               <span data-i18n="saveFavorite">Favorite</span>
             </button>
             <button
@@ -143,7 +160,7 @@
               title="Copiază link"
               data-i18n-title="copyLink"
             >
-              <i class="fas fa-link"></i>
+              <i aria-hidden="true" class="fas fa-link"></i>
               <span data-i18n="copyLink">Copiază link</span>
             </button>
             <button
@@ -153,7 +170,7 @@
               title="Actualizează"
               data-i18n-title="refreshWeather"
             >
-              <i class="fas fa-rotate"></i>
+              <i aria-hidden="true" class="fas fa-rotate"></i>
               <span data-i18n="refreshWeather">Actualizează</span>
             </button>
           </div>
@@ -179,7 +196,7 @@
 
           <div class="weather-details data-panel">
             <div class="data-row">
-              <i class="fas fa-tint data-icon"></i>
+              <i aria-hidden="true" class="fas fa-tint data-icon"></i>
               <span class="data-label" data-i18n="humidity">Umiditate</span>
               <div class="data-value">
                 <span id="humidity"></span>
@@ -187,7 +204,7 @@
               </div>
             </div>
             <div class="data-row">
-              <i class="fas fa-wind data-icon"></i>
+              <i aria-hidden="true" class="fas fa-wind data-icon"></i>
               <span class="data-label" data-i18n="wind">Vânt</span>
               <div class="data-value">
                 <span id="wind-speed"></span>
@@ -195,7 +212,7 @@
               </div>
             </div>
             <div class="data-row">
-              <i class="fas fa-compress-alt data-icon"></i>
+              <i aria-hidden="true" class="fas fa-compress-alt data-icon"></i>
               <span class="data-label" data-i18n="pressure">Presiune</span>
               <div class="data-value">
                 <span id="pressure"></span>
@@ -209,7 +226,7 @@
 
           <div id="air-quality" class="air-quality data-panel hidden">
             <div class="data-row">
-              <i class="fas fa-leaf data-icon"></i>
+              <i aria-hidden="true" class="fas fa-leaf data-icon"></i>
               <span class="data-label" data-i18n="airQuality">Calitatea aerului</span>
               <div class="data-value">
                 <span id="aqi-label"></span>
@@ -228,27 +245,27 @@
           <details class="weather-expanded"><summary data-i18n="moreDetails">Mai multe detalii</summary>
           <div id="weather-extra" class="weather-extra data-panel">
             <div class="data-row">
-              <i class="fas fa-eye data-icon"></i>
+              <i aria-hidden="true" class="fas fa-eye data-icon"></i>
               <span class="data-label" data-i18n="visibility">Vizibilitate</span>
               <span id="visibility" class="data-value"></span>
             </div>
             <div class="data-row">
-              <i class="fas fa-cloud data-icon"></i>
+              <i aria-hidden="true" class="fas fa-cloud data-icon"></i>
               <span class="data-label" data-i18n="cloudCover">Nebulozitate</span>
               <span id="cloud-cover" class="data-value"></span>
             </div>
             <div class="data-row">
-              <i class="fas fa-compass data-icon"></i>
+              <i aria-hidden="true" class="fas fa-compass data-icon"></i>
               <span class="data-label" data-i18n="windDirection">Direcție vânt</span>
               <span id="wind-direction" class="data-value"></span>
             </div>
             <div class="data-row">
-              <i class="fas fa-cloud-showers-heavy data-icon"></i>
+              <i aria-hidden="true" class="fas fa-cloud-showers-heavy data-icon"></i>
               <span class="data-label" data-i18n="precipitation">Precipitații</span>
               <span id="precipitation" class="data-value"></span>
             </div>
             <div class="data-row">
-              <i class="fas fa-droplet data-icon"></i>
+              <i aria-hidden="true" class="fas fa-droplet data-icon"></i>
               <span class="data-label" data-i18n="dewPoint">Punct de rouă</span>
               <span id="dew-point" class="data-value"></span>
             </div>
@@ -256,22 +273,22 @@
 
           <div class="sun-times data-panel">
             <div class="data-row">
-              <i class="fas fa-sun data-icon"></i>
+              <i aria-hidden="true" class="fas fa-sun data-icon"></i>
               <span class="data-label" data-i18n="sunrise">Răsărit</span>
               <span id="sunrise" class="data-value"></span>
             </div>
             <div class="data-row">
-              <i class="fas fa-moon data-icon"></i>
+              <i aria-hidden="true" class="fas fa-moon data-icon"></i>
               <span class="data-label" data-i18n="sunset">Apus</span>
               <span id="sunset" class="data-value"></span>
             </div>
             <div class="data-row">
-              <i class="fas fa-clock data-icon"></i>
+              <i aria-hidden="true" class="fas fa-clock data-icon"></i>
               <span class="data-label" data-i18n="dayLength">Durata zilei</span>
               <span id="day-length" class="data-value"></span>
             </div>
             <div class="data-row">
-              <i class="fas fa-moon data-icon"></i>
+              <i aria-hidden="true" class="fas fa-moon data-icon"></i>
               <span class="data-label" data-i18n="moonPhase">Faza lunii</span>
               <span id="moon-phase" class="data-value"></span>
             </div>
@@ -294,8 +311,8 @@
         <section id="forecast-section" class="card forecast-section hidden">
           <h2 data-i18n="forecastTitle">Prognoză pe 5 zile</h2>
           <p class="section-note" data-i18n="forecastGuide">Alege o zi pentru detalii. Intervale de 3 ore, în ora locală a orașului.</p>
-          <div id="forecast-list" class="forecast-grid" role="group" aria-label="Zilele prognozei"></div>
-          <div class="forecast-toolbar"><h3 id="selected-day"></h3><div class="metric-switch" role="group" aria-label="Indicator grafic">
+          <div id="forecast-list" class="forecast-grid" role="group" aria-label="Zilele prognozei" data-i18n-aria="forecastDays"></div>
+          <div class="forecast-toolbar"><h3 id="selected-day"></h3><div class="metric-switch" role="group" aria-label="Indicator grafic" data-i18n-aria="chartMetric">
             <button type="button" data-metric="temp" aria-pressed="true" data-i18n="temperatureMetric">Temperatură</button>
             <button type="button" data-metric="rain" aria-pressed="false" data-i18n="rainProbability">Risc ploaie</button>
             <button type="button" data-metric="wind" aria-pressed="false" data-i18n="wind">Vânt</button>
@@ -303,7 +320,7 @@
           <canvas id="temperature-chart" class="temperature-chart" width="560" height="210" aria-label="Grafic temperatură" role="img"></canvas>
           <output id="chart-reading" class="chart-reading" for="chart-cursor" aria-live="polite"></output>
           <input type="range" id="chart-cursor" min="0" max="7" value="0" step="1" aria-label="Explorează intervalele prognozei" />
-          <div id="hourly-forecast" class="hourly-forecast" aria-label="Prognoză pe ore"></div>
+          <div id="hourly-forecast" class="hourly-forecast" aria-label="Prognoză pe ore" data-i18n-aria="hourlyForecast"></div>
           <p class="section-note" data-i18n="forecastSource">Prognoză OpenWeather; valorile zilnice folosesc intervalele disponibile.</p>
         </section>
         <section id="planner-section" class="card planner-section hidden">
@@ -322,7 +339,7 @@
           <div class="section-heading">
             <h3 data-i18n="favoriteSearchesTitle">Favorite</h3>
             <button id="clear-favorites" class="btn btn-small btn-ghost" type="button">
-              <i class="fas fa-trash"></i>
+              <i aria-hidden="true" class="fas fa-trash"></i>
               <span data-i18n="clearAll">Șterge tot</span>
             </button>
           </div>
@@ -334,7 +351,7 @@
           <div class="section-heading">
             <h3 data-i18n="recentSearchesTitle">Căutări Recente</h3>
             <button id="clear-recent" class="btn btn-small btn-ghost" type="button">
-              <i class="fas fa-trash"></i>
+              <i aria-hidden="true" class="fas fa-trash"></i>
               <span data-i18n="clearAll">Șterge tot</span>
             </button>
           </div>
@@ -342,6 +359,7 @@
         </section>
       </main>
 
+      <noscript><p class="card">Activează JavaScript pentru prognoza interactivă. Datele meteo sunt furnizate de OpenWeather.</p></noscript>
       <footer class="app-footer">
         <p>
           <span data-i18n="dataProvidedBy">Date furnizate de</span>

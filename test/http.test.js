@@ -4,11 +4,13 @@ import { request } from 'node:http';
 process.env.OPENWEATHER_API_KEY = 'test-only-secret';
 process.env.RATE_LIMIT = '500';
 process.env.MAX_UPSTREAM_CONCURRENCY = '2';
+process.env.UPSTREAM_RATE_LIMIT = '10';
 const { server, responseCache } = await import('../server.js');
 let port;
 let upstream;
+let upstreamCalls = 0;
 const nativeFetch = globalThis.fetch;
-globalThis.fetch = (...args) => upstream(...args);
+globalThis.fetch = (...args) => { upstreamCalls++; return upstream(...args); };
 before(async () => {
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   port = server.address().port;
@@ -87,4 +89,18 @@ test('upstream concurrency is bounded, while duplicate requests share work', asy
   for (const resolve of pending) resolve(Response.json(weather));
   assert.deepEqual((await Promise.all([first, second, duplicate])).map(x => x.status), [200, 200, 200]);
   assert.equal(pending.length, 2);
+});
+
+test('global upstream budget cannot be bypassed by requesting new coordinates', async () => {
+  upstream = async () => Response.json(weather);
+  const responses = [];
+  for (let i = 51; i < 66; i++) responses.push(await http(path(i)));
+  assert.equal(upstreamCalls, 10);
+  assert.ok(responses.some(response => response.status === 503));
+});
+test('location links are excluded from indexing while the homepage remains indexable', async () => {
+  assert.equal((await http('/?lat=44&lon=26')).headers['x-robots-tag'], 'noindex, follow');
+  assert.equal((await http('/')).headers['x-robots-tag'], undefined);
+  assert.equal((await http('/robots.txt')).status, 200);
+  assert.equal((await http('/sitemap.xml')).status, 200);
 });

@@ -1,232 +1,101 @@
-# Aplicația Vremea
+# Vremea
 
-O aplicație web modernă pentru a verifica condițiile meteo actuale și prognoza pe termen scurt, cu suport pentru mai multe limbi și teme vizuale.
+Aplicație meteo în JavaScript, HTML și CSS, cu server Node.js 24. Serverul nu are
+pachete runtime externe. Cheia OpenWeather este folosită exclusiv de proxy-ul
+same-origin `/api/openweather`.
 
----
+- Vreme curentă, AQI, răsărit/apus, umiditate, vizibilitate și punct de rouă.
+- Prognoză pentru următoarele 5 zile în intervale de 3 ore; carduri zilnice cu
+  min/max și precipitații, calculate în fusul furnizat de OpenWeather.
+- Zile selectabile, grafic temperatură/ploaie/vânt și cursor accesibil din tastatură.
+- Rezumat pentru intervalele disponibile din următoarele 24 h și planificator
+  pentru plimbare, alergare și ciclism în următoarele 72 h.
+- Căutare cu sugestii, geolocalizare la cerere, favorite cu coordonate și partajare.
+- RO/EN, °C/°F, șase opțiuni de temă și layout adaptat pentru mobil/desktop.
+- PWA cu shell finit în cache, iconițe/font local și ultimul snapshot pentru offline.
+  API-ul și locațiile nu sunt salvate în Cache Storage. Snapshotul rămâne în
+  localStorage cel mult 24 h pentru afișare; butonul din footer îl poate șterge.
 
-## Descriere
-
-Această aplicație meteo intuitivă permite utilizatorilor să obțină informații detaliate despre vreme pentru orice oraș din lume, folosind numele orașului sau locația lor curentă. Este construită modular, asigurând o mentenabilitate ușoară și o scalabilitate crescută.
-
----
-
-## Funcționalități
-
-- **Căutare după oraș:** Introduceți numele oricărui oraș pentru a obține date meteo.
-- **Autocomplete orașe:** Sugestii de orașe prin proxy-ul OpenWeatherMap.
-- **Locație curentă:** Utilizați geolocalizarea browserului sau locația bazată pe IP.
-- **Unități de temperatură:** Comutați între Celsius (°C) și Fahrenheit (°F).
-- **Căutări recente:** Salvează și afișează o listă de căutări recente pentru acces rapid.
-- **Favorite locale:** Salvează orașe favorite în browser pentru acces rapid.
-- **Share link:** Copiază un link direct către orașul afișat.
-- **Prognoză pe 5 zile:** Afișează carduri zilnice cu temperatură, umiditate și vânt.
-- **Prognoză pe ore:** Afișează următoarele intervale meteo de 3 ore.
-- **Grafic temperatură:** Vizualizează evoluția temperaturii pentru următoarele intervale.
-- **Alerte meteo locale:** Evidențiază furtună, ploaie, ninsoare, vânt puternic și temperaturi extreme pe baza prognozei.
-- **Calitatea aerului:** Afișează AQI, PM2.5, PM10 și O3 prin OpenWeather Air Pollution API.
-- **Refresh rapid:** Reîncarcă datele pentru orașul sau coordonatele curente.
-- **Vizualizare interval de temperatură:** Indicator vizual pentru temperaturile curente față de min/max prognozate.
-- **Detalii meteo complete:** Umiditate, viteza vântului, presiune, răsărit și apus.
-- **Detalii extinse:** Vizibilitate, nebulozitate, direcția vântului și precipitații recente.
-- **Suport i18n:** Schimbare limbă interfață (Română, Engleză).
-- **Teme vizuale:** Light, dark, dark neon, modern light, playful.
-- **Selector de temă:** Mod random sau temă salvată local între vizite.
-- **Responsive design:** Interfață adaptabilă pentru mobil, tabletă și desktop.
-- **Încărcare din URL:** Ex: `index.html?city=Bucuresti`.
-- **PWA/offline shell:** Aplicația poate fi instalată și păstrează shell-ul în cache pentru încărcare offline.
-
----
-
-## Captură de Ecran
-
-![Screenshot cu stilul neon green](images/appScreenshot.jpg)
-
----
-
-## Instalare și Rulare Locală
-
-Pentru a rula aplicația local, urmați acești pași:
-
-### 1. Clonați depozitul
+## Rulare locală
 
 ```bash
-git clone https://github.com/Alexandru2984/anotherGo_at_weatherApp_js
-cd anotherGo_at_weatherApp_js
-```
-
-### 2. Obțineți o cheie API OpenWeatherMap
-
-- Mergeți pe [OpenWeatherMap.org](https://openweathermap.org) și creați un cont
-- Generați o cheie API (gratuită)
-
-### 3. Configurați cheia API pe server
-
-Nu puneți cheia în JavaScript public. Copiați `.env.example` în `.env` și completați:
-
-```bash
+node --version # 24 sau mai nou
 cp .env.example .env
-nano .env
-```
-
-Exemplu:
-
-```env
-OPENWEATHER_API_KEY=cheia_ta_openweathermap
-PORT=8105
-TRUST_PROXY=true
-```
-
-### 4. Porniți aplicația
-
-Aplicația include un server Node.js fără dependențe externe. Acesta servește fișierele statice și expune proxy-ul same-origin `/api/openweather`, astfel încât cheia API să nu ajungă în browser.
-
-```bash
+# Editează OPENWEATHER_API_KEY în .env, fără a publica valoarea.
+chmod 600 .env
 npm start
 ```
 
-Aplicația va fi disponibilă la `http://127.0.0.1:8105/`.
+Cu `.env.example`, aplicația rulează la `http://127.0.0.1:8105`. Fără `.env`,
+portul implicit al serverului este 3050. `npm start` încarcă explicit `.env`.
+Fără cheie funcționează interfața, iar API-ul răspunde 503. Nu introduce cheia în
+frontend, URL-uri, documente sau commituri.
 
-Teste unitare (fără dependențe externe, rulează funcțiile pure din server):
+Pentru testele de dezvoltare:
 
 ```bash
+npm ci --ignore-scripts
+npx playwright install chromium
+npm run check
 npm test
+npm run test:browser
 ```
 
-Acestea rulează automat și în CI (GitHub Actions) la fiecare push/PR pe `main`.
+Testele HTTP și browser folosesc date simulate, fără cheie reală și fără apeluri
+OpenWeather. Playwright pornește un server separat pe `127.0.0.1:18105` și nu
+reutilizează serviciul live. Testele desktop și mobil rulează pe Chromium;
+Safari/iOS și Firefox reale nu sunt acoperite de această suită.
 
-Pentru verificări rapide după deploy:
+Verificarea cu furnizorul real este separată și consumă cotă API:
 
 ```bash
 npm run smoke
 SMOKE_BASE_URL=https://weather.micutu.com npm run smoke
 ```
 
-Pentru VPS, folosiți exemplele din `deploy/`:
+## Securitate și date
 
-- `deploy/nginx-weather.example.conf` pentru reverse proxy nginx către Node
-- `deploy/weather-app.service.example` pentru systemd
+Fișierele publice sunt într-o allowlist explicită; documentele, `.env`, Git,
+testele, scripturile de operare și linkurile simbolice nu sunt servite. Proxy-ul
+acceptă doar endpointuri/parametri validați, are timeouturi, corp upstream limitat
+la 512 KiB, maximum 8 cereri upstream simultane și buget implicit de 50 apeluri
+upstream/minut. Cache-ul comun este limitat la 500 intrări și 16 MiB de conținut;
+limitele per IP se aplică și răspunsurilor din cache.
 
----
+`TRUST_PROXY=true` este destinat exclusiv nginx pe loopback, care suprascrie
+`X-Real-IP` după procesarea IP-ului Cloudflare. Browserul nu trimite cereri direct
+furnizorului: inclusiv fontul și iconițele sunt locale. Logurile aplicației nu
+includ IP-uri sau query-uri; nginx are un format de access log dedicat fără IP,
+query, referrer sau user agent. Logurile de eroare ale infrastructurii pot
+conține detalii de diagnostic și trebuie protejate separat.
 
-## Structura Proiectului
+Orașul/coordonatele se trimit către OpenWeather prin server. Cloudflare și VPS-ul
+procesează conexiunile vizitatorilor; furnizorul meteo vede IP-ul VPS-ului.
+Favoritele, preferințele și ultimul snapshot rămân în browser, fără cont.
 
-```
-.
-├── index.html
-├── styles/
-│   ├── styles.css
-│   ├── styles_v1.css
-│   ├── styles_v2.css
-│   ├── styles_v3.css
-│   └── styles_v4.css
-├── scripts/
-│   ├── app.js
-│   ├── config.js
-│   ├── api.js
-│   ├── theme.js
-│   ├── ui.js
-│   └── utils.js
-├── deploy/
-│   ├── nginx-weather.example.conf
-│   └── weather-app.service.example
-├── server.js
-├── package.json
-├── manifest.webmanifest
-├── offline.html
-├── sw.js
-└── images/
-    └── appScreenshot.jpg
-```
+**Risc rămas:** cheia activă a fost expusă în istoricul Git. Valoarea a fost
+eliminată din README și din fișierele publice. Rotirea a fost amânată explicit de
+proprietar la 2026-11-05; limitarea proxy-ului nu protejează cheia folosită direct
+în afara aplicației. Nu s-a rescris istoricul și nu s-a făcut force-push.
 
----
+## Publicare și documentație
 
-## Tehnologii Folosite
+[Operațiuni și rollback](docs/OPERATIONS.md), [auditul complet](docs/AUDIT.md),
+[planul de produs](docs/ROADMAP.md). Configurațiile domeniului sunt în `deploy/`.
+Publicarea folosește doar fișierele runtime dintr-un commit, într-un director de
+release separat; modificările necomise nu ajung în versiunea publicată.
 
-- **HTML5:** Structura paginii web
-- **CSS3:** Stilizare, variabile CSS
-- **JavaScript (ES6+):** Logica aplicației
-- **Font Awesome:** Iconițe
+CI verifică sintaxa, consistența asseturilor și versiunii workerului, testează
+proxy-ul, fluxurile desktop/mobil și accesibilitatea. Nu publică automat pe VPS.
+SEO include canonical, metadate sociale, robots și sitemap; linkurile cu locații
+au header `X-Robots-Tag: noindex, follow`. Nu există promisiuni de indexare sau
+clasare, pagini individuale de orașe ori date meteo randate pe server pentru SEO.
 
----
+Planificatorul folosește praguri explicite pentru temperatură, ploaie și vânt,
+include rafalele disponibile și exclude furtunile/ninsoarea. El oferă estimări,
+fără a înlocui avertizările oficiale. API-ul actual nu furnizează radar, UV,
+polen sau prognoze de 14 zile. Decalajul orar numeric nu descrie schimbări viitoare
+de oră de vară; faza lunii și punctul de rouă sunt aproximări.
 
-## API-uri
-
-- **OpenWeatherMap API:** Date meteo și prognoze, apelat prin proxy-ul local `/api/openweather`
-
-## Securitate
-
-- Cheia OpenWeatherMap nu mai este inclusă în frontend; serverul o citește din `.env`.
-- Serverul validează orașele, coordonatele, unitățile și limba înainte să apeleze OpenWeatherMap.
-- Există rate limiting simplu pentru endpointurile API.
-- Răspunsurile includ headere CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` și `Permissions-Policy`.
-- Scriptul inline pentru tema random a fost mutat în `scripts/theme.js`, ca să funcționeze cu CSP fără `unsafe-inline`.
-- Geolocalizarea pe bază de IP a fost eliminată din fluxul automat pentru a evita trimiterea adresei IP către un serviciu terț fără acțiune explicită.
-- Cache-urile din memorie (răspunsuri + rate limit) au plafon de mărime și sweep periodic, ca să nu poată fi umflate la nesfârșit (protecție memory-DoS).
-- IP-ul real al vizitatorului este preluat din `CF-Connecting-IP` în spatele Cloudflare; vezi `deploy/nginx-cloudflare-realip.example.conf`.
-- Serverul de fișiere statice refuză să servească fișiere server-side (`server.js`, `package.json`, `deploy/`, teste) și fișierele ascunse.
-- Rotiți cheia OpenWeatherMap veche dacă a fost publicată anterior în repository sau deployată în browser.
-
-### ⚠️ Cheie API expusă în istoric — rotire și curățare
-
-Cheia veche a fost commit-ată cândva în `scripts/config.js`, deci există în
-istoricul git (și pe GitHub). Chiar dacă fișierul curent nu o mai conține,
-oricine poate citi commit-urile vechi. Pași recomandați:
-
-1. **Rotește cheia (obligatoriu):** intră pe
-   [OpenWeatherMap → API keys](https://home.openweathermap.org/api_keys),
-   generează o cheie nouă, șterge/dezactiveaz-o pe cea veche, apoi pune cheia
-   nouă în `.env`:
-
-   ```bash
-   nano .env   # OPENWEATHER_API_KEY=cheia_noua
-   sudo systemctl restart weather-app
-   ```
-
-2. **(Opțional) Curăță istoricul git**, ca să nu mai apară cheia în commit-uri:
-
-   ```bash
-   # cu git-filter-repo (recomandat)
-   pip install git-filter-repo
-   git filter-repo --replace-text <(echo 'REDACTED_ROTATE_EXPOSED_KEY==>REDACTED')
-   git push --force --all      # rescrie istoricul remote
-   ```
-
-   Rescrierea istoricului schimbă hash-urile commit-urilor; coordonează-te cu
-   orice colaborator înainte de force-push. Chiar și după scrub, **rotirea
-   cheii rămâne obligatorie** — cheia veche poate fi deja salvată de terți.
-
----
-
-## Planuri de Viitor
-
-- Securizarea cheii API prin backend
-- Prognoză meteo extinsă (7–14 zile)
-- Notificări meteo
-- Grafice și vizualizări avansate
-- Personalizare temă de către utilizator
-- Autentificare și salvare orașe favorite
-
----
-
-## Contribuții
-
-Contribuțiile sunt binevenite! Urmați acești pași:
-
-1. Fork repo-ul
-2. Creați o ramură: `git checkout -b feature/nume-functie`
-3. Comiteți modificările: `git commit -m 'Adaugă funcționalitate'`
-4. Trimiteți modificările: `git push origin feature/nume-functie`
-5. Deschideți un Pull Request
-
----
-
-## Licență
-
-Acest proiect este licențiat sub licența MIT.
-
----
-
-## Contact
-
-- **Email:** alex_mihai984@yahoo.com
-- **GitHub:** [github.com/Alexandru2984](https://github.com/Alexandru2984)
+Font Awesome Free 6.4.0 este distribuit conform [licenței sale](fonts/LICENSE.txt).
+Codul proiectului păstrează istoricul și autorii existenți.
